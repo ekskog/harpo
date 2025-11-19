@@ -5,7 +5,5 @@ dist
 .vscode
 npm-debug.log
 Dockerfile
-**/*.ts
 
-# Lock files will be copied during build; keep them out of final context if desired
-package-lock.json
+# Lock files will be copied during build; ensure lockfile is included in build context
