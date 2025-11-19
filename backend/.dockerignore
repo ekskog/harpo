@@ -1,0 +1,11 @@
+node_modules
+dist
+.env
+.git
+.vscode
+npm-debug.log
+Dockerfile
+**/*.ts
+
+# Lock files will be copied during build; keep them out of final context if desired
+package-lock.json
