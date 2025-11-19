@@ -8,8 +8,13 @@ FROM --platform=${TARGETPLATFORM} node:${NODE_VERSION}-alpine AS build
 WORKDIR /usr/src/app
 
 # Install build dependencies (dev + prod) to compile TypeScript
+# Use `npm ci` when a lockfile exists for reproducible builds, otherwise fall back to `npm install`.
 COPY package.json package-lock.json* ./
-RUN npm ci --prefer-offline --no-audit --no-fund
+RUN if [ -f package-lock.json ]; then \
+			npm ci --prefer-offline --no-audit --no-fund; \
+		else \
+			npm install --no-audit --no-fund; \
+		fi
 
 # Copy sources and build
 COPY tsconfig.json ./
@@ -27,7 +32,11 @@ RUN addgroup -S app && adduser -S app -G app
 
 # Install production dependencies only
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev --prefer-offline --no-audit --no-fund
+RUN if [ -f package-lock.json ]; then \
+			npm ci --omit=dev --prefer-offline --no-audit --no-fund; \
+		else \
+			npm install --omit=dev --no-audit --no-fund; \
+		fi
 
 # Copy compiled output and set permissions
 COPY --from=build /usr/src/app/dist ./dist

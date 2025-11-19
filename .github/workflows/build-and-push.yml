@@ -52,6 +52,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
+      - name: Cache npm registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install and verify Node dependencies
+        working-directory: ./backend
+        run: |
+          npm ci --prefer-offline --no-audit --no-fund
+
       - name: Build and push (multi-arch)
         uses: docker/build-push-action@v4
         with:
