@@ -38,6 +38,9 @@ router.get('/', async (_req: Request, res: Response) => {
 
 // GET /collections/:id - Get collection with songs in one call
 router.get('/:id', async (req: Request, res: Response) => {
+  console.log('GET /collections/:id');
+  console.log(req.params.id);
+  
   let conn;
   try {
     const collectionId = parseInt(req.params.id);
