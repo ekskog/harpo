@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import healthRouter from './routes/health'; // assuming you have this route
+import healthRouter from './routes/health';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -8,9 +8,15 @@ const port = process.env.PORT || 3000;
 // Enable JSON parsing
 app.use(express.json());
 
+// ✅ Log Origin for every request
+app.use((req, res, next) => {
+  console.log(`Incoming request from Origin: ${req.headers.origin || 'No Origin header'}`);
+  next();
+});
+
 // ✅ Add CORS middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://your-frontend-domain.com'], // allow dev and prod frontend
+  origin: ['http://localhost:5173', 'https://your-frontend-domain.com'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
 }));
 
