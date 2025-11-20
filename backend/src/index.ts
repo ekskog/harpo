@@ -1,6 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import healthRouter from './routes/health';
+import collectionsRouter from './routes/collections';
+
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -22,6 +24,7 @@ app.use(cors({
 
 // Health route
 app.use('/health', healthRouter);
+app.use('/collections', collectionsRouter);
 
 // ✅ Debug route to inspect headers
 app.get('/debug/headers', (req: Request, res: Response) => {

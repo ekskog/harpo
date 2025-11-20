@@ -20,7 +20,7 @@ spec:
       containers:
         - name: backend
           image: ghcr.io/ekskog/harpo-backend:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           envFrom:
