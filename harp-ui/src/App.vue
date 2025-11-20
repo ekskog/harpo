@@ -1,3 +1,40 @@
+<template>
+  <div class="min-h-screen flex flex-col">
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto p-6">
+      <h2 class="text-xl font-semibold mb-4">Select a Collection</h2>
+
+      <!-- Dropdown -->
+      <div v-if="loading" class="text-gray-500">Loading collections...</div>
+      <div v-else-if="error" class="text-red-600">{{ error }}</div>
+      <div v-else>
+        <select
+          v-model="selectedCollection"
+          class="border rounded p-2 w-full"
+        >
+          <option disabled value="">-- Choose a collection --</option>
+          <option
+            v-for="collection in collections"
+            :key="collection.id"
+            :value="collection.id"
+          >
+            {{ collection.name }}
+          </option>
+        </select>
+
+        <div v-if="selectedCollection" class="mt-4 text-gray-700">
+          Selected Collection ID: {{ selectedCollection }}
+        </div>
+      </div>
+    </main>
+
+    <!-- Sticky Footer -->
+    <footer class="fixed bottom-0 left-0 w-full bg-gray-100 p-4 text-center border-t shadow">
+      <HealthChecker />
+    </footer>
+  </div>
+</template>
+
 <script setup>
 import { ref, onMounted } from 'vue';
 import HealthChecker from './components/HealthChecker.vue';
@@ -26,35 +63,3 @@ onMounted(() => {
   fetchCollections();
 });
 </script>
-
-<template>
-  <div class="container mx-auto p-6">
-    <HealthChecker />
-
-    <div class="mt-6">
-      <h2 class="text-xl font-semibold mb-2">Select a Collection</h2>
-
-      <div v-if="loading" class="text-gray-500">Loading collections...</div>
-      <div v-else-if="error" class="text-red-600">{{ error }}</div>
-      <div v-else>
-        <select
-          v-model="selectedCollection"
-          class="border rounded p-2 w-full"
-        >
-          <option disabled value="">-- Choose a collection --</option>
-          <option
-            v-for="collection in collections"
-            :key="collection.id"
-            :value="collection.id"
-          >
-            {{ collection.name }}
-          </option>
-        </select>
-
-        <div v-if="selectedCollection" class="mt-4 text-gray-700">
-          Selected Collection ID: {{ selectedCollection }}
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
