@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import healthRouter from './routes/health';
 
@@ -9,7 +9,7 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 
 // ✅ Log Origin for every request
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   console.log(`Incoming request from Origin: ${req.headers.origin || 'No Origin header'}`);
   next();
 });
@@ -22,6 +22,14 @@ app.use(cors({
 
 // Health route
 app.use('/health', healthRouter);
+
+// ✅ Debug route to inspect headers
+app.get('/debug/headers', (req: Request, res: Response) => {
+  res.json({
+    message: 'Request headers received',
+    headers: req.headers,
+  });
+});
 
 // Start server
 app.listen(port, () => {
