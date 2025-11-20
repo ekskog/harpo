@@ -1,8 +1,9 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 
 const backendStatus = ref('Checking...');
 const headersInfo = ref('Loading...');
+const isHealthy = computed(() => backendStatus.value.includes('✅'));
 
 const healthUrl = '/api/health'; // Vite proxy
 const debugUrl = '/api/debug/headers';
@@ -48,8 +49,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 bg-gray-100 rounded shadow text-center">
-    <p class="text-lg" :class="backendStatus.includes('✅') ? 'text-green-600' : 'text-red-600'">
+  <div class="w-full px-6 py-4 flex flex-wrap items-center justify-between text-sm text-white">
+    <span class="uppercase tracking-wide text-slate-300">System Status</span>
+    <p class="text-base font-semibold" :class="isHealthy ? 'text-green-300' : 'text-red-300'">
       {{ backendStatus }}
     </p>
 

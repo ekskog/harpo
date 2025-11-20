@@ -1,9 +1,7 @@
 <template>
-  <div class="min-h-screen flex flex-col">
+  <div class="min-h-screen flex flex-col bg-slate-100 text-slate-900">
     <!-- Main Content -->
-    <main class="flex-grow container mx-auto p-6">
-      <h2 class="text-xl font-semibold mb-4">Select a Collection</h2>
-
+    <main class="flex-1 w-full max-w-3xl mx-auto px-6 py-10 flex flex-col justify-center">
       <!-- Dropdown -->
       <div v-if="loading" class="text-gray-500">Loading collections...</div>
       <div v-else-if="error" class="text-red-600">{{ error }}</div>
@@ -29,7 +27,7 @@
     </main>
 
     <!-- Sticky Footer -->
-    <footer class="fixed bottom-0 left-0 w-full bg-gray-100 p-4 text-center border-t shadow">
+    <footer class="mt-auto w-full bg-slate-950 text-white border-t border-slate-800">
       <HealthChecker />
     </footer>
   </div>
