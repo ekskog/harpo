@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: harpo-backend
+  name: harp-ui
   namespace: harp
   labels:
-    app: harpo-backend
+    app: harp-ui
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: harpo-backend
+      app: harp-ui
   template:
     metadata:
       labels:
-        app: harpo-backend
+        app: harp-ui
     spec:
       imagePullSecrets:
         - name: ghcr-pull-secret
       containers:
-        - name: backend
-          image: ghcr.io/ekskog/harpo-backend:latest
+        - name: harp-ui
+          image: ghcr.io/ekskog/harp-ui:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
