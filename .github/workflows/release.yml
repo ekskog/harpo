@@ -50,7 +50,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/ekskog/harpo-backend:latest
-            ghcr.io/ekskog/harpo-backend:${{ github.event.release.tag_name }}
+            ghcr.io/ekskog/harpo-ui:latest
+            ghcr.io/ekskog/harpo-ui:${{ github.event.release.tag_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

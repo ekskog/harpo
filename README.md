@@ -69,9 +69,9 @@ The repository includes GitHub Actions workflows that automatically:
 ```bash
 # Build and push images
 docker build -t ghcr.io/ekskog/harp-ui:latest ./harp-ui
-docker build -t ghcr.io/ekskog/harpo-backend:latest ./harp-api
+docker build -t ghcr.io/ekskog/harpo-ui:latest ./harp-api
 docker push ghcr.io/ekskog/harp-ui:latest
-docker push ghcr.io/ekskog/harpo-backend:latest
+docker push ghcr.io/ekskog/harpo-ui:latest
 
 # Deploy to k8s
 kubectl apply -f k8s/
