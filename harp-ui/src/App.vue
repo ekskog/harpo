@@ -27,7 +27,7 @@
         </div>
         
         <!-- Collection View Component -->
-        <CollectionView v-if="selectedCollection" :collection-id="selectedCollection" />
+        <CollectionView v-if="selectedCollection" :collection-id="selectedCollection" :collection="selectedCollectionData" />
       </div>
     </main>
 
@@ -39,7 +39,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import HealthChecker from './components/HealthChecker.vue';
 import CollectionView from './components/CollectionView.vue';
 
@@ -48,12 +48,17 @@ const selectedCollection = ref('');
 const loading = ref(true);
 const error = ref('');
 
+const selectedCollectionData = computed(() => {
+  return collections.value.find(c => c.id == selectedCollection.value) || null;
+});
+
 async function fetchCollections() {
   try {
     const response = await fetch('/api/collections');
     const contentType = response.headers.get('content-type') || '';
     if (response.ok && contentType.includes('application/json')) {
-      collections.value = await response.json();
+      const result = await response.json();
+      collections.value = result.data || [];
       loading.value = false;
     } else {
       error.value = `Unexpected response: ${await response.text()}`;

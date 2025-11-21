@@ -49,6 +49,10 @@
     collectionId: {
       type: [Number, String],
       required: true
+    },
+    collection: {
+      type: Object,
+      default: null
     }
   });
   
@@ -67,32 +71,37 @@
   }
   
   async function fetchCollection() {
-    if (!props.collectionId) return;
+    if (!props.collectionId || !props.collection) return;
     
     loading.value = true;
     error.value = '';
-    collection.value = null;
     
     try {
-      const response = await fetch(`/api/collections/${props.collectionId}`);
+      // Get songs for this collection
+      const response = await fetch(`/api/collections/${props.collectionId}/songs`);
       const contentType = response.headers.get('content-type') || '';
       
       if (response.ok && contentType.includes('application/json')) {
-        collection.value = await response.json();
+        const result = await response.json();
+        // Combine collection info with songs
+        collection.value = {
+          ...props.collection,
+          songs: result.data || []
+        };
       } else if (response.status === 404) {
         error.value = 'Collection not found';
       } else {
-        error.value = `Failed to load collection: ${await response.text()}`;
+        error.value = `Failed to load songs: ${await response.text()}`;
       }
     } catch (err) {
-      error.value = `Failed to fetch collection: ${err.message}`;
+      error.value = `Failed to fetch songs: ${err.message}`;
     } finally {
       loading.value = false;
     }
   }
   
-  // Watch for changes to collectionId and fetch collection
-  watch(() => props.collectionId, () => {
+  // Watch for changes to collectionId and collection props
+  watch([() => props.collectionId, () => props.collection], () => {
     fetchCollection();
   }, { immediate: true });
   </script>

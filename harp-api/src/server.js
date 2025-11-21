@@ -7,11 +7,18 @@
 
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const healthRoutes = require('./routes/health');
 const collectionsRoutes = require('./routes/collections');
 const databaseService = require('./services/databaseService');
 
 const app = express();
+
+// Enable CORS for all routes
+app.use(cors({
+  origin: true, // Allow all origins in development
+  credentials: true
+}));
 
 // Register routes
 app.use('/health', healthRoutes);

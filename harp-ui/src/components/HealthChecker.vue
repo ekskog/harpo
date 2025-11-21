@@ -14,7 +14,7 @@ async function checkBackendHealth() {
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
       const json = await response.json();
-      backendStatus.value = json.status === 'ok'
+      backendStatus.value = json.status === 'healthy' && json.database?.connected === true
         ? '✅ Backend Connected'
         : `⚠️ Unexpected Response: ${JSON.stringify(json)}`;
     } else {
