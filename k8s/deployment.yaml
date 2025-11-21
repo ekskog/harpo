@@ -48,3 +48,54 @@ spec:
             periodSeconds: 5
             failureThreshold: 3
 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harpo-backend
+  namespace: harp
+  labels:
+    app: harpo-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: harpo-backend
+  template:
+    metadata:
+      labels:
+        app: harpo-backend
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: backend
+          image: ghcr.io/ekskog/harpo-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: harpo-secret
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+
