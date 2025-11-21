@@ -114,6 +114,20 @@ class DatabaseService {
       if (conn) conn.release();
     }
   }
+
+  async deleteSong(songId) {
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      const result = await conn.query('DELETE FROM songs WHERE id = ?', [songId]);
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('Error deleting song:', error);
+      throw error;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
 }
 
 module.exports = new DatabaseService();

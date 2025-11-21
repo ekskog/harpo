@@ -99,19 +99,19 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-#### POST /collections/:id/songs
-Add a song to a collection (requires authentication).
+#### DELETE /collections/:collectionId/songs/:songId
+Delete a song from a collection (requires authentication).
 
 **Headers:**
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Request Body:**
+**Response:**
 ```json
 {
-  "title": "string",
-  "trackOrder": "number (optional)"
+  "success": true,
+  "message": "Song deleted successfully"
 }
 ```
 
