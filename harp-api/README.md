@@ -99,6 +99,22 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
+#### DELETE /collections/:id
+Delete a collection and all its songs (requires authentication).
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Collection deleted successfully"
+}
+```
+
 #### DELETE /collections/:collectionId/songs/:songId
 Delete a song from a collection (requires authentication).
 

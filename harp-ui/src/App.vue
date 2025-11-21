@@ -7,9 +7,27 @@
       <div v-else-if="error" class="text-red-600">{{ error }}</div>
       <div v-else>
         <div class="bg-white rounded-lg shadow-md p-6">
-          <label for="collection-select" class="block text-sm font-medium text-slate-700 mb-2">
-            Select a Collection
-          </label>
+          <div class="flex items-center justify-between mb-4">
+            <label for="collection-select" class="block text-sm font-medium text-slate-700">
+              Select a Collection
+            </label>
+            <div class="flex items-center space-x-2" v-if="isAuthenticated">
+              <button
+                v-if="selectedCollection"
+                @click="deleteSelectedCollection"
+                class="px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
+                :disabled="deletingCollection"
+              >
+                {{ deletingCollection ? 'Deleting...' : 'Delete Collection' }}
+              </button>
+              <button
+                @click="showCreateCollection = true"
+                class="px-3 py-1 bg-slate-800 text-white text-sm rounded-md hover:bg-slate-700"
+              >
+                + New Collection
+              </button>
+            </div>
+          </div>
           <select
             id="collection-select"
             v-model="selectedCollection"
@@ -25,16 +43,35 @@
             </option>
           </select>
         </div>
-        
+
         <!-- Collection View Component -->
-        <CollectionView v-if="selectedCollection" :collection-id="selectedCollection" :collection="selectedCollectionData" />
+        <CollectionView
+          v-if="selectedCollection"
+          :collection-id="selectedCollection"
+          :collection="selectedCollectionData"
+          @refresh-collections="fetchCollections"
+        />
       </div>
     </main>
 
     <!-- Sticky Footer -->
     <footer class="mt-auto w-full bg-slate-950 text-white border-t border-slate-800">
-      <HealthChecker />
+      <HealthChecker @show-login="showLoginModal = true" />
     </footer>
+
+    <!-- Login Modal -->
+    <LoginModal
+      :show="showLoginModal"
+      @close="showLoginModal = false"
+      @authenticated="handleAuthenticated"
+    />
+
+    <!-- Create Collection Modal -->
+    <CreateCollectionModal
+      :show="showCreateCollection"
+      @close="showCreateCollection = false"
+      @collection-created="handleCollectionCreated"
+    />
   </div>
 </template>
 
@@ -42,11 +79,19 @@
 import { ref, onMounted, computed } from 'vue';
 import HealthChecker from './components/HealthChecker.vue';
 import CollectionView from './components/CollectionView.vue';
+import LoginModal from './components/LoginModal.vue';
+import CreateCollectionModal from './components/CreateCollectionModal.vue';
+import { useAuth } from './composables/useAuth.js';
+
+const { isAuthenticated, getAuthHeaders } = useAuth();
 
 const collections = ref([]);
 const selectedCollection = ref('');
 const loading = ref(true);
 const error = ref('');
+const showLoginModal = ref(false);
+const showCreateCollection = ref(false);
+const deletingCollection = ref(false);
 
 const selectedCollectionData = computed(() => {
   return collections.value.find(c => c.id == selectedCollection.value) || null;
@@ -65,6 +110,43 @@ async function fetchCollections() {
     }
   } catch (err) {
     error.value = `Failed to fetch collections: ${err.message}`;
+  }
+}
+
+function handleAuthenticated() {
+  fetchCollections(); // Refresh collections after login
+}
+
+function handleCollectionCreated(newCollection) {
+  collections.value.push(newCollection);
+  selectedCollection.value = newCollection.id;
+}
+
+async function deleteSelectedCollection() {
+  if (!selectedCollection.value) return;
+
+  if (!confirm('Are you sure you want to delete this collection and all its songs? This action cannot be undone.')) {
+    return;
+  }
+
+  deletingCollection.value = true;
+  try {
+    const response = await fetch(`/api/collections/${selectedCollection.value}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    if (response.ok) {
+      // Remove from local collections list
+      collections.value = collections.value.filter(c => c.id != selectedCollection.value);
+      selectedCollection.value = '';
+    } else {
+      alert('Failed to delete collection');
+    }
+  } catch (error) {
+    alert('Error deleting collection: ' + error.message);
+  } finally {
+    deletingCollection.value = false;
   }
 }
 

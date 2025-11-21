@@ -128,6 +128,23 @@ class DatabaseService {
       if (conn) conn.release();
     }
   }
+
+  async deleteCollection(collectionId) {
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      // First delete all songs in the collection
+      await conn.query('DELETE FROM songs WHERE collection_id = ?', [collectionId]);
+      // Then delete the collection
+      const result = await conn.query('DELETE FROM collections WHERE id = ?', [collectionId]);
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('Error deleting collection:', error);
+      throw error;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
 }
 
 module.exports = new DatabaseService();

@@ -176,4 +176,45 @@ router.delete('/:collectionId/songs/:songId', authenticateToken, async (req, res
   }
 });
 
+// DELETE /collections/:id - Delete a collection and all its songs
+router.delete('/:id', authenticateToken, async (req, res) => {
+  try {
+    const collectionId = parseInt(req.params.id);
+
+    if (isNaN(collectionId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid collection ID',
+        message: 'Collection ID must be a number',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const deleted = await databaseService.deleteCollection(collectionId);
+
+    if (deleted) {
+      res.status(200).json({
+        success: true,
+        message: 'Collection deleted successfully',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        error: 'Collection not found',
+        message: 'Collection not found or already deleted',
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    console.error('Error deleting collection:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete collection',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 module.exports = router;
