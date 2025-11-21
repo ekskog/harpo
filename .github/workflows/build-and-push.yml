@@ -1,19 +1,19 @@
-name: Build and publish backend image
+name: Build and publish harp-ui image
 
 on:
   push:
     branches: [ main ]
     paths:
-      - 'backend/**'
+      - 'harp-ui/**'
       - '.github/workflows/build-and-push.yml'
   pull_request:
     branches: [ main ]
     paths:
-      - 'backend/**'
+      - 'harp-api/**'
   workflow_dispatch: {}
 
 concurrency:
-  group: build-and-push-backend
+  group: build-and-push-harp-ui
   cancel-in-progress: true
 
 jobs:
@@ -47,8 +47,8 @@ jobs:
       - name: Restore node_modules cache
         uses: actions/cache@v4
         with:
-          path: backend/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('backend/package-lock.json') }}
+          path: harp-ui/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('harp-ui/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
@@ -56,24 +56,24 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('backend/package-lock.json') }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('harp-ui/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-npm-
 
       - name: Install and verify Node dependencies
-        working-directory: ./backend
+        working-directory: ./harp-ui
         run: |
           npm ci --prefer-offline --no-audit --no-fund
 
       - name: Build and push (multi-arch)
         uses: docker/build-push-action@v4
         with:
-          context: ./backend
-          file: ./backend/Dockerfile
+          context: ./harp-ui
+          file: ./harp-ui/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/ekskog/harpo-backend:latest
-            ghcr.io/ekskog/harpo-backend:${{ github.sha }}
+            ghcr.io/ekskog/harpo-harp-ui:latest
+            ghcr.io/ekskog/harpo-harp-ui:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
