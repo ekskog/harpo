@@ -13,7 +13,6 @@ A web application for managing music collections and songs. Built with **Vue.js*
 ## Architecture Overview
 
 ### Components
-- **Frontend (harp-ui):** Vue.js SPA served by Nginx
 - **Backend (harp-api):** Node.js + Express API with MariaDB
 - **Database:** MariaDB for collections and songs
 - **Deployment:** k3s cluster with automated CI/CD
@@ -21,9 +20,8 @@ A web application for managing music collections and songs. Built with **Vue.js*
 ## Repository Structure
 ```
 harpo/
-├── harp-ui/         # Vue.js frontend (Vite + Nginx)
 ├── harp-api/        # Node.js backend (Express + MariaDB)
-├── k8s/             # Kubernetes manifests
+├── k8s/             # Kubernetes manifests (API only)
 ├── .github/         # GitHub Actions workflows
 └── README.md
 ```
@@ -61,17 +59,15 @@ npm run dev
 
 ### Automated CI/CD
 The repository includes GitHub Actions workflows that automatically:
-1. Build Docker images when code changes
+1. Build API Docker images when `harp-api/` changes
 2. Push images to GitHub Container Registry
 3. Deploy to k8s cluster (requires setup)
 
 ### Manual Deployment
 ```bash
-# Build and push images
-docker build -t ghcr.io/ekskog/harp-ui:latest ./harp-ui
-docker build -t ghcr.io/ekskog/harpo-ui:latest ./harp-api
-docker push ghcr.io/ekskog/harp-ui:latest
-docker push ghcr.io/ekskog/harpo-ui:latest
+# Build and push API image
+docker build -t ghcr.io/ekskog/harp-api:latest ./harp-api
+docker push ghcr.io/ekskog/harp-api:latest
 
 # Deploy to k8s
 kubectl apply -f k8s/

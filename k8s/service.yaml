@@ -14,20 +14,3 @@ spec:
       port: 80
       targetPort: 3000
 
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: harpo-ui
-  namespace: harp
-  labels:
-    app: harpo-ui
-spec:
-  type: ClusterIP
-  selector:
-    app: harpo-ui
-  ports:
-    - name: http
-      port: 3000
-      targetPort: 3000
-
