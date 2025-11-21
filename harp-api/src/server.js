@@ -20,6 +20,13 @@ app.use(cors({
   credentials: true
 }));
 
+// Log request origins for debugging
+app.use((req, res, next) => {
+  const origin = req.headers.origin || req.headers.referer || 'unknown';
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - Origin: ${origin}`);
+  next();
+});
+
 // Register routes
 app.use('/health', healthRoutes);
 app.use('/collections', collectionsRoutes);
