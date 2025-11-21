@@ -10,6 +10,7 @@ const express = require('express');
 const cors = require('cors');
 const healthRoutes = require('./routes/health');
 const collectionsRoutes = require('./routes/collections');
+const authRoutes = require('./routes/auth');
 const databaseService = require('./services/databaseService');
 
 const app = express();
@@ -19,6 +20,9 @@ app.use(cors({
   origin: true, // Allow all origins in development
   credentials: true
 }));
+
+// Parse JSON bodies
+app.use(express.json());
 
 // Log request origins for debugging
 app.use((req, res, next) => {
@@ -30,6 +34,7 @@ app.use((req, res, next) => {
 // Register routes
 app.use('/health', healthRoutes);
 app.use('/collections', collectionsRoutes);
+app.use('/auth', authRoutes);
 
 const PORT = process.env.PORT || 3000;
 
