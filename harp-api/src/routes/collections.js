@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const fs = require('fs').promises;
+const path = require('path');
 const databaseService = require('../services/databaseService');
 const { authenticateToken } = require('../middleware/auth');
 
@@ -51,6 +53,97 @@ router.get('/:id/songs', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch songs for collection',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// GET /collections/:collectionId/songs/:songId/lyrics - Fetch song lyrics
+router.get('/:collectionId/songs/:songId/lyrics', async (req, res) => {
+  try {
+    const collectionId = parseInt(req.params.collectionId);
+    const songId = parseInt(req.params.songId);
+
+    if (isNaN(collectionId) || isNaN(songId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid IDs',
+        message: 'Collection ID and Song ID must be numbers',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Fetch collection and song from database
+    const collection = await databaseService.getCollectionById(collectionId);
+    const song = await databaseService.getSongById(songId);
+
+    if (!collection) {
+      return res.status(404).json({
+        success: false,
+        error: 'Collection not found',
+        message: 'Collection not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (!song) {
+      return res.status(404).json({
+        success: false,
+        error: 'Song not found',
+        message: 'Song not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Verify song belongs to collection
+    if (song.collection_id !== collectionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Song does not belong to collection',
+        message: 'Song does not belong to the specified collection',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Convert collection name and song title to lowercase (removing spaces)
+    const collectionName = collection.name.toLowerCase().replace(/\s+/g, '');
+    const songName = song.title.toLowerCase().replace(/\s+/g, '');
+
+    // Construct file path
+    const lyricsPath = path.join('/harp', collectionName, `${songName}.txt`);
+
+    try {
+      // Read lyrics file
+      const lyrics = await fs.readFile(lyricsPath, 'utf-8');
+
+      res.status(200).json({
+        success: true,
+        data: {
+          lyrics: lyrics,
+          collection_id: collectionId,
+          collection_name: collection.name,
+          song_id: songId,
+          song_title: song.title
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (fileError) {
+      if (fileError.code === 'ENOENT') {
+        return res.status(404).json({
+          success: false,
+          error: 'Lyrics file not found',
+          message: `Lyrics file not found at ${lyricsPath}`,
+          timestamp: new Date().toISOString()
+        });
+      }
+      throw fileError;
+    }
+  } catch (error) {
+    console.error('Error fetching song lyrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch song lyrics',
       message: error.message,
       timestamp: new Date().toISOString()
     });

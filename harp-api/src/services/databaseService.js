@@ -45,6 +45,20 @@ class DatabaseService {
     }
   }
 
+  async getCollectionById(collectionId) {
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      const rows = await conn.query('SELECT * FROM collections WHERE id = ?', [collectionId]);
+      return rows[0] || null;
+    } catch (error) {
+      console.error('Error fetching collection by ID:', error);
+      throw error;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
   async getSongsByCollectionId(collectionId) {
     let conn;
     try {
@@ -53,6 +67,20 @@ class DatabaseService {
       return rows;
     } catch (error) {
       console.error('Error fetching songs by collection ID:', error);
+      throw error;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  async getSongById(songId) {
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      const rows = await conn.query('SELECT * FROM songs WHERE id = ?', [songId]);
+      return rows[0] || null;
+    } catch (error) {
+      console.error('Error fetching song by ID:', error);
       throw error;
     } finally {
       if (conn) conn.release();
@@ -146,7 +174,5 @@ class DatabaseService {
     }
   }
 }
-
-module.exports = new DatabaseService();
 
 module.exports = new DatabaseService();

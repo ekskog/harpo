@@ -33,6 +33,9 @@ spec:
             limits:
               cpu: "500m"
               memory: "512Mi"
+          volumeMounts:
+            - name: harp
+              mountPath: /app/harp
           livenessProbe:
             httpGet:
               path: /health
@@ -47,4 +50,8 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
             failureThreshold: 3
+      volumes:
+        - name: harp
+          persistentVolumeClaim:
+            claimName: harp-nfspvc             
 
