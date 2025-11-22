@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: harp-nfspv
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    path: /var/www/http/harp
+    server: mjolnir
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nolock
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: harp-nfspvc
+  namespace: harp
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: ""
+  volumeName: harp-nfspv

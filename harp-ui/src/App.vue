@@ -55,7 +55,7 @@
     </main>
 
     <!-- Sticky Footer -->
-    <footer class="mt-auto w-full bg-slate-950 text-white border-t border-slate-800">
+    <footer class="mt-auto w-full bg-slate-100 text-black border-t border-slate-200">
       <HealthChecker @show-login="showLoginModal = true" />
     </footer>
 

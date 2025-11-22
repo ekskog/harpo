@@ -56,21 +56,21 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="w-full px-6 py-4 flex flex-wrap items-center justify-between text-sm text-white">
-    <span class="uppercase tracking-wide text-slate-300">System Status</span>
+  <div class="w-full px-6 py-4 flex flex-wrap items-center justify-between text-sm text-black">
+    <span class="uppercase tracking-wide text-black">System Status</span>
     <div class="flex items-center space-x-4">
-      <p class="text-base font-semibold" :class="isHealthy ? 'text-green-300' : 'text-red-300'">
+      <p class="text-base font-semibold" :class="isHealthy ? 'text-green-600' : 'text-red-600'">
         {{ backendStatus }}
       </p>
 
       <!-- Auth Status -->
       <div class="flex items-center space-x-2">
-        <span v-if="isAuthenticated" class="text-slate-300">
+        <span v-if="isAuthenticated" class="text-black">
           Logged in as {{ user.username }}
         </span>
         <button
           @click="isAuthenticated ? handleLogout() : $emit('show-login')"
-          class="p-2 rounded-md hover:bg-slate-800 transition-colors"
+          class="p-2 rounded-md hover:bg-slate-200 transition-colors text-black"
           :title="isAuthenticated ? 'Logout' : 'Login'"
         >
           <svg

@@ -42,16 +42,21 @@
               :key="song.id"
               class="flex items-center justify-between p-3 hover:bg-slate-50 rounded transition-colors"
             >
-              <div class="flex items-center">
+              <div class="flex items-center flex-1">
                 <span class="text-slate-500 font-mono text-sm mr-4 min-w-[2rem]">
                   {{ song.track_order || '—' }}
                 </span>
-                <span class="text-slate-800 font-medium">{{ song.title }}</span>
+                <button
+                  @click="showLyrics(song)"
+                  class="text-slate-800 font-medium hover:text-slate-600 text-left cursor-pointer"
+                >
+                  {{ song.title }}
+                </button>
               </div>
               <button
                 v-if="isAuthenticated"
-                @click="deleteSong(song.id)"
-                class="text-red-600 hover:text-red-800 p-1"
+                @click.stop="deleteSong(song.id)"
+                class="text-red-600 hover:text-red-800 p-1 ml-2"
                 title="Delete song"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,8 +75,88 @@
         @close="showAddSong = false"
         @song-added="handleSongAdded"
       />
+
+      <!-- Lyrics Panel -->
+      <Transition name="panel">
+        <div
+          v-if="showLyricsPanel"
+          class="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end"
+          @click="closeLyricsPanel"
+        >
+          <div
+            class="bg-white w-full max-w-2xl h-full shadow-xl overflow-y-auto"
+            @click.stop
+          >
+          <div class="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10">
+            <div>
+              <h3 class="text-2xl font-bold text-slate-800">{{ selectedSong?.title }}</h3>
+              <p class="text-sm text-slate-500 mt-1">{{ collection?.name }}</p>
+            </div>
+            <button
+              @click="closeLyricsPanel"
+              class="text-slate-500 hover:text-slate-700 p-2"
+              title="Close"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div class="p-6">
+            <div v-if="loadingLyrics" class="text-center py-12">
+              <div class="text-slate-500">Loading lyrics...</div>
+            </div>
+            <div v-else-if="lyricsError" class="text-center py-12">
+              <div class="text-red-600 mb-2">{{ lyricsError }}</div>
+              <button
+                @click="fetchLyrics"
+                class="text-slate-600 hover:text-slate-800 underline"
+              >
+                Try again
+              </button>
+            </div>
+            <div v-else-if="lyrics" class="prose max-w-none">
+              <pre class="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">{{ lyrics }}</pre>
+            </div>
+          </div>
+        </div>
+      </Transition>
     </div>
   </template>
+
+  <style scoped>
+  .panel-enter-active {
+    transition: opacity 0.3s ease;
+  }
+
+  .panel-enter-active > div {
+    transition: transform 0.3s ease;
+  }
+
+  .panel-leave-active {
+    transition: opacity 0.3s ease;
+  }
+
+  .panel-leave-active > div {
+    transition: transform 0.3s ease;
+  }
+
+  .panel-enter-from {
+    opacity: 0;
+  }
+
+  .panel-enter-from > div {
+    transform: translateX(100%);
+  }
+
+  .panel-leave-to {
+    opacity: 0;
+  }
+
+  .panel-leave-to > div {
+    transform: translateX(100%);
+  }
+  </style>
 
   <script setup>
   import { ref, watch } from 'vue';
@@ -97,6 +182,11 @@
   const loading = ref(false);
   const error = ref('');
   const showAddSong = ref(false);
+  const showLyricsPanel = ref(false);
+  const selectedSong = ref(null);
+  const lyrics = ref('');
+  const loadingLyrics = ref(false);
+  const lyricsError = ref('');
 
   function formatDate(dateString) {
     if (!dateString) return '';
@@ -160,6 +250,49 @@
 
   function handleSongAdded(newSong) {
     collection.value.songs.push(newSong);
+  }
+
+  async function showLyrics(song) {
+    selectedSong.value = song;
+    showLyricsPanel.value = true;
+    lyrics.value = '';
+    lyricsError.value = '';
+    await fetchLyrics();
+  }
+
+  async function fetchLyrics() {
+    if (!selectedSong.value || !props.collectionId) return;
+
+    loadingLyrics.value = true;
+    lyricsError.value = '';
+
+    try {
+      const response = await fetch(
+        `/api/collections/${props.collectionId}/songs/${selectedSong.value.id}/lyrics`
+      );
+      const contentType = response.headers.get('content-type') || '';
+
+      if (response.ok && contentType.includes('application/json')) {
+        const result = await response.json();
+        lyrics.value = result.data?.lyrics || '';
+      } else if (response.status === 404) {
+        lyricsError.value = 'Lyrics not found for this song';
+      } else {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to load lyrics' }));
+        lyricsError.value = errorData.message || 'Failed to load lyrics';
+      }
+    } catch (err) {
+      lyricsError.value = `Error: ${err.message}`;
+    } finally {
+      loadingLyrics.value = false;
+    }
+  }
+
+  function closeLyricsPanel() {
+    showLyricsPanel.value = false;
+    selectedSong.value = null;
+    lyrics.value = '';
+    lyricsError.value = '';
   }
 
   // Watch for changes to collectionId and collection props
