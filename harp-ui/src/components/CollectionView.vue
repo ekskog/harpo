@@ -5,16 +5,24 @@
       <div v-else-if="collection" class="space-y-6">
         <!-- Collection Details -->
         <div class="bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-3xl font-bold text-slate-800 mb-2">{{ collection.name }}</h2>
+          <p v-if="collection.description" class="text-slate-600 mb-4">
+            {{ collection.description }}
+          </p>
+          <p class="text-sm text-slate-500">
+            Created: {{ formatDate(collection.created_at) }}
+          </p>
+        </div>
+
+        <!-- Songs List -->
+        <div class="bg-white rounded-lg shadow-md p-6">
           <div class="flex items-center justify-between mb-4">
-            <div>
-              <h2 class="text-3xl font-bold text-slate-800 mb-2">{{ collection.name }}</h2>
-              <p v-if="collection.description" class="text-slate-600 mb-4">
-                {{ collection.description }}
-              </p>
-              <p class="text-sm text-slate-500">
-                Created: {{ formatDate(collection.created_at) }}
-              </p>
-            </div>
+            <h3 class="text-2xl font-bold text-slate-800">
+              Songs
+              <span class="text-sm font-normal text-slate-500 ml-2">
+                ({{ collection.songs.length }})
+              </span>
+            </h3>
             <button
               v-if="isAuthenticated"
               @click="showAddSong = true"
@@ -23,16 +31,6 @@
               + Add Song
             </button>
           </div>
-        </div>
-
-        <!-- Songs List -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-          <h3 class="text-2xl font-bold mb-4 text-slate-800">
-            Songs
-            <span class="text-sm font-normal text-slate-500 ml-2">
-              ({{ collection.songs.length }})
-            </span>
-          </h3>
           <div v-if="collection.songs.length === 0" class="text-gray-500 italic">
             No songs in this collection yet.
           </div>
