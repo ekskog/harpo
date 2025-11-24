@@ -1,15 +1,17 @@
-name: Build and publish harp-api image
+name: Build and publish harp images
 
 on:
   push:
     branches: [ main ]
     paths:
       - 'harp-api/**'
+      - 'harp-ui/**'
       - '.github/workflows/build-and-push.yml'
   pull_request:
     branches: [ main ]
     paths:
       - 'harp-api/**'
+      - 'harp-ui/**'
   workflow_dispatch:
     inputs:
       deploy:
@@ -22,12 +24,12 @@ on:
         - 'false'
 
 concurrency:
-  group: build-and-push-harp-api
+  group: build-and-push-harp
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Build and push harp-api image
+    name: Build and push harp images
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -53,7 +55,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Restore node_modules cache
+      - name: Restore harp-api node_modules cache
         uses: actions/cache@v4
         with:
           path: harp-api/node_modules
@@ -61,7 +63,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Cache npm registry
+      - name: Cache harp-api npm registry
         uses: actions/cache@v4
         with:
           path: ~/.npm
@@ -71,6 +73,27 @@ jobs:
 
       - name: Install and verify Node dependencies
         working-directory: ./harp-api
+        run: |
+          npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Restore harp-ui node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: harp-ui/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('harp-ui/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Cache harp-ui npm registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('harp-ui/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install UI dependencies
+        working-directory: ./harp-ui
         run: |
           npm ci --prefer-offline --no-audit --no-fund
 
@@ -84,6 +107,19 @@ jobs:
           tags: |
             ghcr.io/ekskog/harp-api:latest
             ghcr.io/ekskog/harp-api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push UI (multi-arch)
+        uses: docker/build-push-action@v4
+        with:
+          context: ./harp-ui
+          file: ./harp-ui/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/ekskog/harp-ui:latest
+            ghcr.io/ekskog/harp-ui:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
