@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-bookworm AS builder
+FROM node:20-alpine AS builder
 
 # Install security updates
 RUN apk update && apk upgrade
