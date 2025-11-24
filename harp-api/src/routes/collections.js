@@ -280,8 +280,8 @@ router.post('/:collectionId/songs/:songId/lyrics', authenticateToken, async (req
       });
     }
 
-    // Construct directory and file path: /harp/{collection_id}/{source}/{track_order}.txt
-    const lyricsDir = path.join('/harp', collectionId.toString(), song.source);
+    // Construct directory and file path: /harp/{source}/{track_order}.txt
+    const lyricsDir = path.join('/app/harp', song.source);
     const lyricsPath = path.join(lyricsDir, `${song.track_order}.txt`);
     
     console.log('Saving lyrics to path:', lyricsPath);
