@@ -8,8 +8,11 @@
       <div v-else>
         <div class="bg-white rounded-lg shadow-md p-6">
           <div class="flex items-center justify-between mb-4">
-            <label for="collection-select" class="block text-sm font-medium text-slate-700">
-              Select a Collection
+            <label
+              for="collection-select"
+              class="block text-2xl font-bold text-slate-800"
+            >
+              The Harp of J.S.E.
             </label>
             <div class="flex items-center space-x-2" v-if="isAuthenticated">
               <button
@@ -18,7 +21,7 @@
                 class="px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
                 :disabled="deletingCollection"
               >
-                {{ deletingCollection ? 'Deleting...' : 'Delete Collection' }}
+                {{ deletingCollection ? "Deleting..." : "Delete Collection" }}
               </button>
               <button
                 @click="showCreateCollection = true"
@@ -50,12 +53,15 @@
           :collection-id="selectedCollection"
           :collection="selectedCollectionData"
           @refresh-collections="fetchCollections"
+          @close="handleCloseCollection"
         />
       </div>
     </main>
 
     <!-- Sticky Footer -->
-    <footer class="mt-auto w-full bg-slate-100 text-black border-t border-slate-200">
+    <footer
+      class="mt-auto w-full bg-slate-100 text-black border-t border-slate-200"
+    >
       <HealthChecker @show-login="showLoginModal = true" />
     </footer>
 
@@ -76,32 +82,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import HealthChecker from './components/HealthChecker.vue';
-import CollectionView from './components/CollectionView.vue';
-import LoginModal from './components/LoginModal.vue';
-import CreateCollectionModal from './components/CreateCollectionModal.vue';
-import { useAuth } from './composables/useAuth.js';
+import { ref, onMounted, computed } from "vue";
+import HealthChecker from "./components/HealthChecker.vue";
+import CollectionView from "./components/CollectionView.vue";
+import LoginModal from "./components/LoginModal.vue";
+import CreateCollectionModal from "./components/CreateCollectionModal.vue";
+import { useAuth } from "./composables/useAuth.js";
 
 const { isAuthenticated, getAuthHeaders } = useAuth();
 
 const collections = ref([]);
-const selectedCollection = ref('');
+const selectedCollection = ref("");
 const loading = ref(true);
-const error = ref('');
+const error = ref("");
 const showLoginModal = ref(false);
 const showCreateCollection = ref(false);
 const deletingCollection = ref(false);
 
 const selectedCollectionData = computed(() => {
-  return collections.value.find(c => c.id == selectedCollection.value) || null;
+  return (
+    collections.value.find((c) => c.id == selectedCollection.value) || null
+  );
 });
 
 async function fetchCollections() {
   try {
-    const response = await fetch('/api/collections');
-    const contentType = response.headers.get('content-type') || '';
-    if (response.ok && contentType.includes('application/json')) {
+    const response = await fetch("/api/collections");
+    const contentType = response.headers.get("content-type") || "";
+    if (response.ok && contentType.includes("application/json")) {
       const result = await response.json();
       collections.value = result.data || [];
       loading.value = false;
@@ -125,32 +133,53 @@ function handleCollectionCreated(newCollection) {
 async function deleteSelectedCollection() {
   if (!selectedCollection.value) return;
 
-  if (!confirm('Are you sure you want to delete this collection and all its songs? This action cannot be undone.')) {
+  if (
+    !confirm(
+      "Are you sure you want to delete this collection and all its songs? This action cannot be undone."
+    )
+  ) {
     return;
   }
 
   deletingCollection.value = true;
   try {
-    const response = await fetch(`/api/collections/${selectedCollection.value}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `/api/collections/${selectedCollection.value}`,
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      }
+    );
 
     if (response.ok) {
       // Remove from local collections list
-      collections.value = collections.value.filter(c => c.id != selectedCollection.value);
-      selectedCollection.value = '';
+      collections.value = collections.value.filter(
+        (c) => c.id != selectedCollection.value
+      );
+      selectedCollection.value = "";
     } else {
-      alert('Failed to delete collection');
+      alert("Failed to delete collection");
     }
   } catch (error) {
-    alert('Error deleting collection: ' + error.message);
+    alert("Error deleting collection: " + error.message);
   } finally {
     deletingCollection.value = false;
   }
+}
+
+function handleCloseCollection() {
+  selectedCollection.value = '';
 }
 
 onMounted(() => {
   fetchCollections();
 });
 </script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap');
+
+body {
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+}
+</style>
