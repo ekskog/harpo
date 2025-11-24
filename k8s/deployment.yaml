@@ -53,5 +53,51 @@ spec:
       volumes:
         - name: harp
           persistentVolumeClaim:
-            claimName: harp-nfspvc             
-
+            claimName: harp-nfspvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harp-ui
+  namespace: harp
+  labels:
+    app: harp-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: harp-ui
+  template:
+    metadata:
+      labels:
+        app: harp-ui
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: harp-ui
+          image: ghcr.io/ekskog/harp-ui:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3

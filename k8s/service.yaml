@@ -13,4 +13,20 @@ spec:
     - name: http
       port: 80
       targetPort: 3000
+---
 
+apiVersion: v1
+kind: Service
+metadata:
+  name: harp-ui
+  namespace: harp
+  labels:
+    app: harp-ui
+spec:
+  type: LoadBalancer
+  selector:
+    app: harp-ui
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
