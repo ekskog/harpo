@@ -194,6 +194,7 @@ router.get('/:collectionId/songs/:songId/lyrics', async (req, res) => {
 
     // Construct file path
     const lyricsPath = path.join('/harp', collectionName, `${songName}.txt`);
+    console.log('Constructed lyrics file path:', lyricsPath);
 
     try {
       // Read lyrics file
@@ -226,6 +227,89 @@ router.get('/:collectionId/songs/:songId/lyrics', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch song lyrics',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// POST /collections/:collectionId/songs/:songId/lyrics - Save song lyrics
+router.post('/:collectionId/songs/:songId/lyrics', authenticateToken, async (req, res) => {
+  try {
+    const collectionId = parseInt(req.params.collectionId);
+    const songId = parseInt(req.params.songId);
+    const { lyrics } = req.body;
+
+    if (isNaN(collectionId) || isNaN(songId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid IDs',
+        message: 'Collection ID and Song ID must be numbers',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (!lyrics || typeof lyrics !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid lyrics',
+        message: 'Lyrics must be provided as a string',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Get song details to find the source and track_order
+    const song = await databaseService.getSongById(songId);
+    
+    if (!song) {
+      return res.status(404).json({
+        success: false,
+        error: 'Song not found',
+        message: 'Song not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Verify song belongs to collection
+    if (song.collection_id !== collectionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Song does not belong to collection',
+        message: 'Song does not belong to the specified collection',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Construct directory and file path: /harp/{collection_id}/{source}/{track_order}.txt
+    const lyricsDir = path.join('/harp', collectionId.toString(), song.source);
+    const lyricsPath = path.join(lyricsDir, `${song.track_order}.txt`);
+    
+    console.log('Saving lyrics to path:', lyricsPath);
+
+    // Ensure directory exists
+    await fs.mkdir(lyricsDir, { recursive: true });
+
+    // Write lyrics to file
+    await fs.writeFile(lyricsPath, lyrics, 'utf-8');
+
+    res.status(200).json({
+      success: true,
+      message: 'Lyrics saved successfully',
+      data: {
+        collection_id: collectionId,
+        song_id: songId,
+        song_title: song.title,
+        source: song.source,
+        track_order: song.track_order,
+        lyrics_path: lyricsPath
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error saving song lyrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to save song lyrics',
       message: error.message,
       timestamp: new Date().toISOString()
     });

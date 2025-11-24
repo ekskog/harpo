@@ -38,7 +38,8 @@
             <li
               v-for="song in collection.songs"
               :key="song.id"
-              class="flex items-center justify-between p-3 hover:bg-slate-50 rounded transition-colors"
+              class="flex items-center justify-between p-3 rounded transition-colors"
+              :class="selectedSong?.id === song.id ? 'bg-slate-100' : 'hover:bg-slate-50'"
             >
               <div class="flex items-center flex-1">
                 <span class="text-slate-500 font-mono text-sm mr-4 min-w-[2rem]">
@@ -64,6 +65,71 @@
             </li>
           </ol>
         </div>
+
+        <!-- Lyrics Panel (Below Songs) -->
+        <Transition name="expand">
+          <div v-if="showLyricsPanel" class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-slate-100 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <div>
+                <h3 class="text-xl font-bold text-slate-800">{{ selectedSong?.title }}</h3>
+                <p class="text-sm text-slate-500 mt-1">Lyrics</p>
+              </div>
+              <button
+                @click="closeLyricsPanel"
+                class="text-slate-500 hover:text-slate-700 p-2"
+                title="Close"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div class="p-6 max-h-96 overflow-y-auto">
+              <div v-if="loadingLyrics" class="text-center py-12">
+                <div class="text-slate-500">Loading lyrics...</div>
+              </div>
+              <div v-else-if="lyrics" class="prose max-w-none">
+                <pre class="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">{{ lyrics }}</pre>
+              </div>
+              <div v-else class="text-center py-12">
+                <p class="text-red-600 mb-4" v-if="lyricsError">{{ lyricsError }}</p>
+                <p class="text-slate-500 mb-4" v-else>No lyrics available for this song.</p>
+                
+                <div v-if="isAuthenticated && !showAddLyricsForm">
+                  <button
+                    @click="showAddLyricsForm = true"
+                    class="px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
+                  >
+                    Add Lyrics
+                  </button>
+                </div>
+                
+                <div v-if="showAddLyricsForm" class="max-w-2xl mx-auto text-left">
+                  <textarea
+                    v-model="newLyrics"
+                    placeholder="Enter lyrics here..."
+                    class="w-full h-64 p-4 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 font-sans"
+                  ></textarea>
+                  <div class="flex gap-2 mt-4 justify-end">
+                    <button
+                      @click="cancelAddLyrics"
+                      class="px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      @click="submitLyrics"
+                      :disabled="!newLyrics.trim() || savingLyrics"
+                      class="px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {{ savingLyrics ? 'Saving...' : 'Save Lyrics' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Transition>
       </div>
 
       <!-- Add Song Modal -->
@@ -73,86 +139,28 @@
         @close="showAddSong = false"
         @song-added="handleSongAdded"
       />
-
-      <!-- Lyrics Panel -->
-      <Transition name="panel">
-        <div
-          v-if="showLyricsPanel"
-          class="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end"
-          @click="closeLyricsPanel"
-        >
-          <div
-            class="bg-white w-full max-w-2xl h-full shadow-xl overflow-y-auto"
-            @click.stop
-          >
-          <div class="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10">
-            <div>
-              <h3 class="text-2xl font-bold text-slate-800">{{ selectedSong?.title }}</h3>
-              <p class="text-sm text-slate-500 mt-1">{{ collection?.name }}</p>
-            </div>
-            <button
-              @click="closeLyricsPanel"
-              class="text-slate-500 hover:text-slate-700 p-2"
-              title="Close"
-            >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div class="p-6">
-            <div v-if="loadingLyrics" class="text-center py-12">
-              <div class="text-slate-500">Loading lyrics...</div>
-            </div>
-            <div v-else-if="lyricsError" class="text-center py-12">
-              <div class="text-red-600 mb-2">{{ lyricsError }}</div>
-              <button
-                @click="fetchLyrics"
-                class="text-slate-600 hover:text-slate-800 underline"
-              >
-                Try again
-              </button>
-            </div>
-            <div v-else-if="lyrics" class="prose max-w-none">
-              <pre class="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">{{ lyrics }}</pre>
-            </div>
-          </div>
-        </div>
-      </Transition>
     </div>
   </template>
 
   <style scoped>
-  .panel-enter-active {
-    transition: opacity 0.3s ease;
+  .expand-enter-active,
+  .expand-leave-active {
+    transition: all 0.3s ease;
+    overflow: hidden;
   }
 
-  .panel-enter-active > div {
-    transition: transform 0.3s ease;
-  }
-
-  .panel-leave-active {
-    transition: opacity 0.3s ease;
-  }
-
-  .panel-leave-active > div {
-    transition: transform 0.3s ease;
-  }
-
-  .panel-enter-from {
+  .expand-enter-from,
+  .expand-leave-to {
     opacity: 0;
+    max-height: 0;
+    transform: scaleY(0.8);
   }
 
-  .panel-enter-from > div {
-    transform: translateX(100%);
-  }
-
-  .panel-leave-to {
-    opacity: 0;
-  }
-
-  .panel-leave-to > div {
-    transform: translateX(100%);
+  .expand-enter-to,
+  .expand-leave-from {
+    opacity: 1;
+    max-height: 1000px;
+    transform: scaleY(1);
   }
   </style>
 
@@ -185,6 +193,9 @@
   const lyrics = ref('');
   const loadingLyrics = ref(false);
   const lyricsError = ref('');
+  const showAddLyricsForm = ref(false);
+  const newLyrics = ref('');
+  const savingLyrics = ref(false);
 
   function formatDate(dateString) {
     if (!dateString) return '';
@@ -238,6 +249,10 @@
       if (response.ok) {
         // Remove song from local collection
         collection.value.songs = collection.value.songs.filter(song => song.id !== songId);
+        // Close lyrics panel if the deleted song was selected
+        if (selectedSong.value?.id === songId) {
+          closeLyricsPanel();
+        }
       } else {
         alert('Failed to delete song');
       }
@@ -251,6 +266,12 @@
   }
 
   async function showLyrics(song) {
+    // If clicking the same song, toggle the panel
+    if (selectedSong.value?.id === song.id && showLyricsPanel.value) {
+      closeLyricsPanel();
+      return;
+    }
+
     selectedSong.value = song;
     showLyricsPanel.value = true;
     lyrics.value = '';
@@ -291,6 +312,46 @@
     selectedSong.value = null;
     lyrics.value = '';
     lyricsError.value = '';
+    showAddLyricsForm.value = false;
+    newLyrics.value = '';
+  }
+
+  function cancelAddLyrics() {
+    showAddLyricsForm.value = false;
+    newLyrics.value = '';
+  }
+
+  async function submitLyrics() {
+    if (!newLyrics.value.trim() || !selectedSong.value || !props.collectionId) return;
+
+    savingLyrics.value = true;
+
+    try {
+      const response = await fetch(
+        `/api/collections/${props.collectionId}/songs/${selectedSong.value.id}/lyrics`,
+        {
+          method: 'POST',
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ lyrics: newLyrics.value }),
+        }
+      );
+
+      if (response.ok) {
+        lyrics.value = newLyrics.value;
+        showAddLyricsForm.value = false;
+        newLyrics.value = '';
+      } else {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to save lyrics' }));
+        alert(errorData.message || 'Failed to save lyrics');
+      }
+    } catch (err) {
+      alert(`Error saving lyrics: ${err.message}`);
+    } finally {
+      savingLyrics.value = false;
+    }
   }
 
   // Watch for changes to collectionId and collection props

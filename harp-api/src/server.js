@@ -27,7 +27,7 @@ app.use(express.json());
 // Log request origins for debugging
 app.use((req, res, next) => {
   const origin = req.headers.origin || req.headers.referer || 'unknown';
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - Origin: ${origin}`);
+  // console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - Origin: ${origin}`);
   next();
 });
 
