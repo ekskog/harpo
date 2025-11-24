@@ -8,7 +8,7 @@ spec:
   accessModes:
     - ReadWriteMany
   nfs:
-    path: /var/www/http/harp
+    path: /var/www/html/harp
     server: mjolnir
   persistentVolumeReclaimPolicy: Retain
   mountOptions:

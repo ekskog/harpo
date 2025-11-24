@@ -6,6 +6,7 @@ const databaseService = require('../services/databaseService');
 const { authenticateToken } = require('../middleware/auth');
 
 router.get('/', async (req, res) => {
+  console.log('Received request for all collections');
   try {
     const collections = await databaseService.getAllCollections();
 
@@ -53,6 +54,87 @@ router.get('/:id/songs', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch songs for collection',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// GET /collections/:collectionId/songs/:songId/lyrics - Get song lyrics
+router.get('/:collectionId/songs/:songId/lyrics', async (req, res) => {
+  console.log('Received request for song lyrics');
+  console.log('Request params:', req.params);
+  try {
+    const collectionId = parseInt(req.params.collectionId);
+    const songId = parseInt(req.params.songId);
+
+    if (isNaN(collectionId) || isNaN(songId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid IDs',
+        message: 'Collection ID and Song ID must be numbers',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Get song details to find the source and track_order
+    const song = await databaseService.getSongById(songId);
+    if (!song) {
+      return res.status(404).json({
+        success: false,
+        error: 'Song not found',
+        message: 'Song not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (song.collection_id !== collectionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Song not in collection',
+        message: 'Song does not belong to the specified collection',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Construct file path: /app/harp/{source}.{track_order}.txt
+    const filePath = `/app/harp/${song.source}/${song.track_order}.txt`;
+    console.log('SOng details:', song);
+    console.log('Constructed lyrics file path:', filePath);
+
+    // Read file synchronously (since lyrics files should be small)
+    const fs = require('fs');
+    const path = require('path');
+
+    try {
+      const fullPath = path.resolve(filePath);
+      const lyrics = fs.readFileSync(fullPath, 'utf8');
+
+      res.status(200).json({
+        success: true,
+        data: {
+          lyrics: lyrics,
+          song_id: songId,
+          title: song.title,
+          source: song.source,
+          track_order: song.track_order
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (fileError) {
+      console.error('Error reading lyrics file:', fileError);
+      res.status(404).json({
+        success: false,
+        error: 'Lyrics file not found',
+        message: `Lyrics file not found at ${filePath}`,
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching song lyrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch song lyrics',
       message: error.message,
       timestamp: new Date().toISOString()
     });
