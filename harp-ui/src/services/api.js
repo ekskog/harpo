@@ -22,14 +22,15 @@ class ApiService {
    * Make a POST request
    */
   async post(endpoint, data, options = {}) {
+    const { headers = {}, ...restOptions } = options
     return this.request(endpoint, {
       method: 'POST',
+      ...restOptions,
       headers: {
         'Content-Type': 'application/json',
-        ...options.headers
+        ...headers
       },
-      body: JSON.stringify(data),
-      ...options
+      body: JSON.stringify(data)
     })
   }
 
@@ -37,14 +38,15 @@ class ApiService {
    * Make a PUT request
    */
   async put(endpoint, data, options = {}) {
+    const { headers = {}, ...restOptions } = options
     return this.request(endpoint, {
       method: 'PUT',
+      ...restOptions,
       headers: {
         'Content-Type': 'application/json',
-        ...options.headers
+        ...headers
       },
-      body: JSON.stringify(data),
-      ...options
+      body: JSON.stringify(data)
     })
   }
 
@@ -64,6 +66,14 @@ class ApiService {
   async request(endpoint, options = {}) {
     const url = `${this.baseUrl}${endpoint}`
     
+    // DEBUG: Log the full request
+    console.log('API Request:', {
+      url,
+      method: options.method,
+      headers: options.headers,
+      body: options.body
+    })
+    
     try {
       const response = await fetch(url, options)
       const contentType = response.headers.get('content-type') || ''
@@ -75,6 +85,8 @@ class ApiService {
       } else {
         data = await response.text()
       }
+
+      console.log('API Response:', { status: response.status, data })
 
       if (!response.ok) {
         // Extract error message from response
@@ -89,8 +101,12 @@ class ApiService {
 
       return data
     } catch (error) {
-      // Re-throw with more context
-      throw new Error(`API Error: ${error.message}`)
+      // If it's already an Error object, just re-throw it
+      if (error instanceof Error) {
+        throw error
+      }
+      // Otherwise wrap it
+      throw new Error(`API Error: ${error}`)
     }
   }
 }
@@ -105,21 +121,21 @@ export const collectionsApi = {
   getById: (id) => api.get(`/collections/${id}`),
   
   create: (collectionData, authHeaders) =>
-    api.post('/collections', collectionData, { headers: authHeaders }),
+    api.post('/collections', collectionData, authHeaders ? { headers: authHeaders } : {}),
   
   getSongs: (collectionId) => api.get(`/collections/${collectionId}/songs`),
   
   createSong: (collectionId, songData, authHeaders) => 
-    api.post(`/collections/${collectionId}/songs`, songData, { headers: authHeaders }),
+    api.post(`/collections/${collectionId}/songs`, songData, authHeaders ? { headers: authHeaders } : {}),
   
   deleteSong: (collectionId, songId, authHeaders) => 
-    api.delete(`/collections/${collectionId}/songs/${songId}`, { headers: authHeaders }),
+    api.delete(`/collections/${collectionId}/songs/${songId}`, authHeaders ? { headers: authHeaders } : {}),
   
   getLyrics: (collectionId, songId) => 
     api.get(`/collections/${collectionId}/songs/${songId}/lyrics`),
   
   saveLyrics: (collectionId, songId, lyrics, authHeaders) => 
-    api.post(`/collections/${collectionId}/songs/${songId}/lyrics`, { lyrics }, { headers: authHeaders })
+    api.post(`/collections/${collectionId}/songs/${songId}/lyrics`, { lyrics }, authHeaders ? { headers: authHeaders } : {})
 }
 
 // Auth API endpoints

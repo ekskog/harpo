@@ -115,11 +115,11 @@ class DatabaseService {
     }
   }
 
-  async createCollection(name, description = null) {
+  async createCollection(name, description = null, source = null) {
     let conn;
     try {
       conn = await pool.getConnection();
-      const result = await conn.query('INSERT INTO collections (name, description, created_at) VALUES (?, ?, NOW())', [name, description]);
+      const result = await conn.query('INSERT INTO collections (name, description, created_at, source) VALUES (?, ?, NOW(), ?)', [name, description, source]);
       return { id: Number(result.insertId), name, description };
     } catch (error) {
       console.error('Error creating collection:', error);

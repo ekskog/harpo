@@ -319,7 +319,7 @@ router.post('/:collectionId/songs/:songId/lyrics', authenticateToken, async (req
 // Protected routes - require authentication
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, source } = req.body;
 
     if (!name) {
       return res.status(400).json({
@@ -329,8 +329,15 @@ router.post('/', authenticateToken, async (req, res) => {
         timestamp: new Date().toISOString()
       });
     }
-
-    const newCollection = await databaseService.createCollection(name, description);
+    if (!source) {  // <-- Validate source
+      return res.status(400).json({
+        success: false,
+        error: 'Missing source',
+        message: 'Source is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+    const newCollection = await databaseService.createCollection(name, description, source);
 
     res.status(201).json({
       success: true,
