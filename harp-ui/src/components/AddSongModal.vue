@@ -27,7 +27,7 @@
             </label>
             <input
               id="trackOrder"
-              v-model.number="form.trackOrder"
+              v-model="form.trackOrder"
               type="number"
               min="1"
               class="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-slate-500 focus:border-transparent"
@@ -92,6 +92,9 @@ async function handleSubmit() {
   loading.value = true
   error.value = ''
 
+  console.log('AddSongModal - Form values:', form.value)
+  console.log('AddSongModal - Collection ID:', props.collectionId)
+
   // Validate title
   const trimmedTitle = form.value.title?.trim()
   if (!trimmedTitle) {
@@ -100,13 +103,24 @@ async function handleSubmit() {
     return
   }
 
+  // Build request payload
+  const payload = {
+    title: trimmedTitle
+  }
+  
+  // Only include trackOrder if it has a valid numeric value
+  const trackOrderValue = form.value.trackOrder
+  if (trackOrderValue !== null && trackOrderValue !== undefined && trackOrderValue !== '' && !isNaN(trackOrderValue)) {
+    payload.trackOrder = parseInt(trackOrderValue, 10)
+  }
+
+  console.log('AddSongModal - Request payload:', payload)
+  console.log('AddSongModal - Auth headers:', getAuthHeaders())
+
   try {
     const result = await collectionsApi.createSong(
       props.collectionId,
-      {
-        title: trimmedTitle,
-        trackOrder: form.value.trackOrder || undefined
-      },
+      payload,
       getAuthHeaders()
     )
 

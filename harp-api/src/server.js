@@ -24,10 +24,12 @@ app.use(cors({
 // Parse JSON bodies
 app.use(express.json());
 
-// Log request origins for debugging
+// Log request body for debugging (after JSON parsing)
 app.use((req, res, next) => {
-  const origin = req.headers.origin || req.headers.referer || 'unknown';
-  // console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - Origin: ${origin}`);
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+    console.log(`[${req.method} ${req.path}] Raw body received:`, req.body);
+    console.log(`[${req.method} ${req.path}] Content-Type:`, req.headers['content-type']);
+  }
   next();
 });
 

@@ -22,7 +22,16 @@ class ApiService {
    * Make a POST request
    */
   async post(endpoint, data, options = {}) {
+    console.log('[ApiService.post] Endpoint:', endpoint)
+    console.log('[ApiService.post] Data:', data)
+    console.log('[ApiService.post] Data type:', typeof data)
+    console.log('[ApiService.post] Stringified body:', JSON.stringify(data))
+    
     const { headers = {}, ...restOptions } = options
+    const bodyString = JSON.stringify(data)
+    
+    console.log('[ApiService.post] Final body string:', bodyString)
+    
     return this.request(endpoint, {
       method: 'POST',
       ...restOptions,
@@ -30,7 +39,7 @@ class ApiService {
         'Content-Type': 'application/json',
         ...headers
       },
-      body: JSON.stringify(data)
+      body: bodyString
     })
   }
 
