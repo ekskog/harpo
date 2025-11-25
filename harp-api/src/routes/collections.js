@@ -361,6 +361,8 @@ router.post('/:id/songs', authenticateToken, async (req, res) => {
     const collectionId = parseInt(req.params.id);
     const { title, trackOrder } = req.body;
 
+    console.log('Create song request:', { collectionId, title, trackOrder, body: req.body });
+
     if (isNaN(collectionId)) {
       return res.status(400).json({
         success: false,
@@ -370,16 +372,17 @@ router.post('/:id/songs', authenticateToken, async (req, res) => {
       });
     }
 
-    if (!title) {
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
       return res.status(400).json({
         success: false,
         error: 'Missing song title',
-        message: 'Title is required',
+        message: 'Title is required and cannot be empty',
         timestamp: new Date().toISOString()
       });
     }
 
-    const newSong = await databaseService.createSong(collectionId, title, null, null, trackOrder);
+    const trimmedTitle = title.trim();
+    const newSong = await databaseService.createSong(collectionId, trimmedTitle, null, null, trackOrder);
 
     res.status(201).json({
       success: true,

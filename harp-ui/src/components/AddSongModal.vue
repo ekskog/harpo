@@ -92,11 +92,19 @@ async function handleSubmit() {
   loading.value = true
   error.value = ''
 
+  // Validate title
+  const trimmedTitle = form.value.title?.trim()
+  if (!trimmedTitle) {
+    error.value = 'Song title is required'
+    loading.value = false
+    return
+  }
+
   try {
     const result = await collectionsApi.createSong(
       props.collectionId,
       {
-        title: form.value.title,
+        title: trimmedTitle,
         trackOrder: form.value.trackOrder || undefined
       },
       getAuthHeaders()
