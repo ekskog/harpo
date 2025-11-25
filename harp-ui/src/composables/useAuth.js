@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-
+const API_BASE = '/api'; // This works both in dev and production
 const TOKEN_KEY = 'harp_auth_token';
 const USER_KEY = 'harp_user';
 
@@ -24,7 +24,7 @@ function clearAuth() {
 
 async function login(username, password) {
   try {
-    const response = await fetch('/api/auth/login', {
+    const response = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

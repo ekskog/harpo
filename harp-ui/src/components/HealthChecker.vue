@@ -1,15 +1,15 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useAuth } from '../composables/useAuth.js';
-
+const API_BASE = '/api'; // This works both in dev and production
 const { isAuthenticated, user, logout } = useAuth();
 
 const backendStatus = ref('Checking...');
 const headersInfo = ref('Loading...');
 const isHealthy = computed(() => backendStatus.value.includes('✅'));
 
-const healthUrl = '/api/health'; // Vite proxy
-const debugUrl = '/api/debug/headers';
+const healthUrl = `${API_BASE}/health`;
+const debugUrl = `${API_BASE}/debug/headers`;
 
 async function checkBackendHealth() {
   try {

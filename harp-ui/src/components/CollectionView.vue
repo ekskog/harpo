@@ -1,12 +1,18 @@
 <template>
   <div class="mt-6">
-    <div v-if="loading" class="text-gray-500">Loading collection...</div>
-    <div v-else-if="error" class="text-red-600">{{ error }}</div>
+    <div v-if="loading" class="text-gray-500">
+      Loading collection...
+    </div>
+    <div v-else-if="error" class="text-red-600">
+      {{ error }}
+    </div>
     <div v-else-if="collection" class="space-y-6">
       <!-- Collection Details -->
       <div class="bg-white rounded-lg shadow-md p-6">
         <div class="flex items-start justify-between mb-2">
-          <h2 class="text-2xl font-bold text-slate-800">{{ collection.name }}</h2>
+          <h2 class="text-2xl font-bold text-slate-800">
+            {{ collection.name }}
+          </h2>
           <button
             @click="$emit('close')"
             class="text-slate-400 hover:text-slate-600 p-1 -mt-1"
@@ -83,7 +89,9 @@
         <div v-if="showLyricsPanel" class="bg-white rounded-lg shadow-md overflow-hidden">
           <div class="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
             <div>
-              <h3 class="text-2xl font-bold text-slate-800">{{ selectedSong?.title }}</h3>
+              <h3 class="text-2xl font-bold text-slate-800">
+                {{ selectedSong?.title }}
+              </h3>
             </div>
             <button
               @click="closeLyricsPanel"
@@ -97,14 +105,20 @@
           </div>
           <div class="p-6">
             <div v-if="loadingLyrics" class="text-center py-12">
-              <div class="text-slate-500">Loading lyrics...</div>
+              <div class="text-slate-500">
+                Loading lyrics...
+              </div>
             </div>
             <div v-else-if="lyrics" class="prose max-w-none">
               <pre class="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">{{ lyrics }}</pre>
             </div>
             <div v-else class="text-center py-12">
-              <p class="text-red-600 mb-4" v-if="lyricsError">{{ lyricsError }}</p>
-              <p class="text-slate-500 mb-4" v-else>No lyrics available for this song.</p>
+              <p v-if="lyricsError" class="text-red-600 mb-4">
+                {{ lyricsError }}
+              </p>
+              <p v-else class="text-slate-500 mb-4">
+                No lyrics available for this song.
+              </p>
               
               <div v-if="isAuthenticated && !showAddLyricsForm">
                 <button
@@ -120,7 +134,7 @@
                   v-model="newLyrics"
                   placeholder="Enter lyrics here..."
                   class="w-full h-64 p-4 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 font-sans"
-                ></textarea>
+                />
                 <div class="flex gap-2 mt-4 justify-end">
                   <button
                     @click="cancelAddLyrics"
@@ -153,6 +167,172 @@
   </div>
 </template>
 
+<script setup>
+import { ref, watch } from 'vue'
+import { useAuth } from '../composables/useAuth.js'
+import { collectionsApi } from '../services/api.js'
+import AddSongModal from './AddSongModal.vue'
+
+const props = defineProps({
+  collectionId: {
+    type: [Number, String],
+    required: true
+  },
+  collection: {
+    type: Object,
+    default: null
+  }
+})
+
+const emit = defineEmits(['refresh-collections', 'close'])
+
+const { isAuthenticated, getAuthHeaders } = useAuth()
+
+const collection = ref(null)
+const loading = ref(false)
+const error = ref('')
+const showAddSong = ref(false)
+const showLyricsPanel = ref(false)
+const selectedSong = ref(null)
+const lyrics = ref('')
+const loadingLyrics = ref(false)
+const lyricsError = ref('')
+const showAddLyricsForm = ref(false)
+const newLyrics = ref('')
+const savingLyrics = ref(false)
+
+function formatDate(dateString) {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+async function fetchCollection() {
+  if (!props.collectionId || !props.collection) return
+
+  loading.value = true
+  error.value = ''
+
+  try {
+    const result = await collectionsApi.getSongs(props.collectionId)
+    // Combine collection info with songs
+    collection.value = {
+      ...props.collection,
+      songs: result.data || []
+    }
+  } catch (err) {
+    error.value = err.message
+  } finally {
+    loading.value = false
+  }
+}
+
+async function deleteSong(songId) {
+  if (!confirm('Are you sure you want to delete this song?')) return
+
+  try {
+    await collectionsApi.deleteSong(
+      props.collectionId, 
+      songId, 
+      getAuthHeaders()
+    )
+    
+    // Remove song from local collection
+    collection.value.songs = collection.value.songs.filter(song => song.id !== songId)
+    
+    // Close lyrics panel if the deleted song was selected
+    if (selectedSong.value?.id === songId) {
+      closeLyricsPanel()
+    }
+  } catch (err) {
+    alert(err.message)
+  }
+}
+
+function handleSongAdded(newSong) {
+  collection.value.songs.push(newSong)
+}
+
+async function showLyrics(song) {
+  // If clicking the same song, toggle the panel
+  if (selectedSong.value?.id === song.id && showLyricsPanel.value) {
+    closeLyricsPanel()
+    return
+  }
+
+  selectedSong.value = song
+  showLyricsPanel.value = true
+  lyrics.value = ''
+  lyricsError.value = ''
+  await fetchLyrics()
+}
+
+async function fetchLyrics() {
+  if (!selectedSong.value || !props.collectionId) return
+
+  loadingLyrics.value = true
+  lyricsError.value = ''
+
+  try {
+    const result = await collectionsApi.getLyrics(
+      props.collectionId, 
+      selectedSong.value.id
+    )
+    lyrics.value = result.data?.lyrics || ''
+  } catch (err) {
+    lyricsError.value = err.message
+  } finally {
+    loadingLyrics.value = false
+  }
+}
+
+function closeLyricsPanel() {
+  showLyricsPanel.value = false
+  selectedSong.value = null
+  lyrics.value = ''
+  lyricsError.value = ''
+  showAddLyricsForm.value = false
+  newLyrics.value = ''
+}
+
+function cancelAddLyrics() {
+  showAddLyricsForm.value = false
+  newLyrics.value = ''
+}
+
+async function submitLyrics() {
+  if (!newLyrics.value.trim() || !selectedSong.value || !props.collectionId) return
+
+  savingLyrics.value = true
+
+  try {
+    await collectionsApi.saveLyrics(
+      props.collectionId,
+      selectedSong.value.id,
+      newLyrics.value,
+      getAuthHeaders()
+    )
+    
+    lyrics.value = newLyrics.value
+    showAddLyricsForm.value = false
+    newLyrics.value = ''
+  } catch (err) {
+    alert(err.message)
+  } finally {
+    savingLyrics.value = false
+  }
+}
+
+// Watch for changes to collectionId and collection props
+watch([() => props.collectionId, () => props.collection], () => {
+  fetchCollection()
+}, { immediate: true })
+</script>
+
 <style scoped>
 .expand-enter-active,
 .expand-leave-active {
@@ -174,199 +354,3 @@
   transform: scaleY(1);
 }
 </style>
-
-<script setup>
-import { ref, watch } from 'vue';
-import { useAuth } from '../composables/useAuth.js';
-import AddSongModal from './AddSongModal.vue';
-
-const props = defineProps({
-  collectionId: {
-    type: [Number, String],
-    required: true
-  },
-  collection: {
-    type: Object,
-    default: null
-  }
-});
-
-const emit = defineEmits(['refresh-collections', 'close']);
-
-const { isAuthenticated, getAuthHeaders } = useAuth();
-
-const collection = ref(null);
-const loading = ref(false);
-const error = ref('');
-const showAddSong = ref(false);
-const showLyricsPanel = ref(false);
-const selectedSong = ref(null);
-const lyrics = ref('');
-const loadingLyrics = ref(false);
-const lyricsError = ref('');
-const showAddLyricsForm = ref(false);
-const newLyrics = ref('');
-const savingLyrics = ref(false);
-
-function formatDate(dateString) {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-}
-
-async function fetchCollection() {
-  if (!props.collectionId || !props.collection) return;
-
-  loading.value = true;
-  error.value = '';
-
-  try {
-    // Get songs for this collection
-    const response = await fetch(`/api/collections/${props.collectionId}/songs`);
-    const contentType = response.headers.get('content-type') || '';
-
-    if (response.ok && contentType.includes('application/json')) {
-      const result = await response.json();
-      // Combine collection info with songs
-      collection.value = {
-        ...props.collection,
-        songs: result.data || []
-      };
-    } else if (response.status === 404) {
-      error.value = 'Collection not found';
-    } else {
-      error.value = `Failed to load songs: ${await response.text()}`;
-    }
-  } catch (err) {
-    error.value = `Failed to fetch songs: ${err.message}`;
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function deleteSong(songId) {
-  if (!confirm('Are you sure you want to delete this song?')) return;
-
-  try {
-    const response = await fetch(`/api/collections/${props.collectionId}/songs/${songId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-
-    if (response.ok) {
-      // Remove song from local collection
-      collection.value.songs = collection.value.songs.filter(song => song.id !== songId);
-      // Close lyrics panel if the deleted song was selected
-      if (selectedSong.value?.id === songId) {
-        closeLyricsPanel();
-      }
-    } else {
-      alert('Failed to delete song');
-    }
-  } catch (error) {
-    alert('Error deleting song: ' + error.message);
-  }
-}
-
-function handleSongAdded(newSong) {
-  collection.value.songs.push(newSong);
-}
-
-async function showLyrics(song) {
-  // If clicking the same song, toggle the panel
-  if (selectedSong.value?.id === song.id && showLyricsPanel.value) {
-    closeLyricsPanel();
-    return;
-  }
-
-  selectedSong.value = song;
-  showLyricsPanel.value = true;
-  lyrics.value = '';
-  lyricsError.value = '';
-  await fetchLyrics();
-}
-
-async function fetchLyrics() {
-  if (!selectedSong.value || !props.collectionId) return;
-
-  loadingLyrics.value = true;
-  lyricsError.value = '';
-
-  try {
-    const response = await fetch(
-      `/api/collections/${props.collectionId}/songs/${selectedSong.value.id}/lyrics`
-    );
-    const contentType = response.headers.get('content-type') || '';
-
-    if (response.ok && contentType.includes('application/json')) {
-      const result = await response.json();
-      lyrics.value = result.data?.lyrics || '';
-    } else if (response.status === 404) {
-      lyricsError.value = 'Lyrics not found for this song';
-    } else {
-      const errorData = await response.json().catch(() => ({ message: 'Failed to load lyrics' }));
-      lyricsError.value = errorData.message || 'Failed to load lyrics';
-    }
-  } catch (err) {
-    lyricsError.value = `Error: ${err.message}`;
-  } finally {
-    loadingLyrics.value = false;
-  }
-}
-
-function closeLyricsPanel() {
-  showLyricsPanel.value = false;
-  selectedSong.value = null;
-  lyrics.value = '';
-  lyricsError.value = '';
-  showAddLyricsForm.value = false;
-  newLyrics.value = '';
-}
-
-function cancelAddLyrics() {
-  showAddLyricsForm.value = false;
-  newLyrics.value = '';
-}
-
-async function submitLyrics() {
-  if (!newLyrics.value.trim() || !selectedSong.value || !props.collectionId) return;
-
-  savingLyrics.value = true;
-
-  try {
-    const response = await fetch(
-      `/api/collections/${props.collectionId}/songs/${selectedSong.value.id}/lyrics`,
-      {
-        method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ lyrics: newLyrics.value }),
-      }
-    );
-
-    if (response.ok) {
-      lyrics.value = newLyrics.value;
-      showAddLyricsForm.value = false;
-      newLyrics.value = '';
-    } else {
-      const errorData = await response.json().catch(() => ({ message: 'Failed to save lyrics' }));
-      alert(errorData.message || 'Failed to save lyrics');
-    }
-  } catch (err) {
-    alert(`Error saving lyrics: ${err.message}`);
-  } finally {
-    savingLyrics.value = false;
-  }
-}
-
-// Watch for changes to collectionId and collection props
-watch([() => props.collectionId, () => props.collection], () => {
-  fetchCollection();
-}, { immediate: true });
-</script>

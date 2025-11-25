@@ -85,7 +85,7 @@ async function handleSubmit() {
   error.value = '';
 
   try {
-    const response = await fetch('/api/collections', {
+    const response = await fetch(`${API_BASE}/collections`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

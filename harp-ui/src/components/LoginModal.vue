@@ -74,6 +74,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useAuth } from '../composables/useAuth.js';
+import { collectionsApi } from '../services/api.js'
 
 const props = defineProps({
   show: {

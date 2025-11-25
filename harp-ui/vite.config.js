@@ -13,4 +13,6 @@ export default defineConfig({
       },
     },
   },
+  // Ensure base path is set correctly
+  base: '/',
 });
