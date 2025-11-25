@@ -6,7 +6,9 @@ const databaseService = require('../services/databaseService');
 const { authenticateToken } = require('../middleware/auth');
 
 router.get('/', async (req, res) => {
-  console.log('Received request for all collections');
+  console.log('[GET /collections] Operation: Get all collections');
+  console.log('[GET /collections] Params:', req.params);
+  console.log('[GET /collections] Query:', req.query);
   try {
     const collections = await databaseService.getAllCollections();
 
@@ -28,6 +30,9 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id/songs', async (req, res) => {
+  console.log('[GET /collections/:id/songs] Operation: Get songs by collection');
+  console.log('[GET /collections/:id/songs] Params:', req.params);
+  console.log('[GET /collections/:id/songs] Query:', req.query);
   try {
     const collectionId = parseInt(req.params.id);
 
@@ -62,8 +67,9 @@ router.get('/:id/songs', async (req, res) => {
 
 // GET /collections/:collectionId/songs/:songId/lyrics - Get song lyrics
 router.get('/:collectionId/songs/:songId/lyrics', async (req, res) => {
-  console.log('Received request for song lyrics');
-  console.log('Request params:', req.params);
+  console.log('[GET /collections/:collectionId/songs/:songId/lyrics] Operation: Get song lyrics');
+  console.log('[GET /collections/:collectionId/songs/:songId/lyrics] Params:', req.params);
+  console.log('[GET /collections/:collectionId/songs/:songId/lyrics] Query:', req.query);
   try {
     const collectionId = parseInt(req.params.collectionId);
     const songId = parseInt(req.params.songId);
@@ -143,6 +149,9 @@ router.get('/:collectionId/songs/:songId/lyrics', async (req, res) => {
 
 // GET /collections/:collectionId/songs/:songId/lyrics - Fetch song lyrics
 router.get('/:collectionId/songs/:songId/lyrics', async (req, res) => {
+  console.log('[GET /collections/:collectionId/songs/:songId/lyrics] Operation: Fetch song lyrics (duplicate route)');
+  console.log('[GET /collections/:collectionId/songs/:songId/lyrics] Params:', req.params);
+  console.log('[GET /collections/:collectionId/songs/:songId/lyrics] Query:', req.query);
   try {
     const collectionId = parseInt(req.params.collectionId);
     const songId = parseInt(req.params.songId);
@@ -235,6 +244,9 @@ router.get('/:collectionId/songs/:songId/lyrics', async (req, res) => {
 
 // POST /collections/:collectionId/songs/:songId/lyrics - Save song lyrics
 router.post('/:collectionId/songs/:songId/lyrics', authenticateToken, async (req, res) => {
+  console.log('[POST /collections/:collectionId/songs/:songId/lyrics] Operation: Save song lyrics');
+  console.log('[POST /collections/:collectionId/songs/:songId/lyrics] Params:', req.params);
+  console.log('[POST /collections/:collectionId/songs/:songId/lyrics] Body:', req.body);
   try {
     const collectionId = parseInt(req.params.collectionId);
     const songId = parseInt(req.params.songId);
@@ -318,6 +330,9 @@ router.post('/:collectionId/songs/:songId/lyrics', authenticateToken, async (req
 
 // Protected routes - require authentication
 router.post('/', authenticateToken, async (req, res) => {
+  console.log('[POST /collections] Operation: Create collection');
+  console.log('[POST /collections] Params:', req.params);
+  console.log('[POST /collections] Body:', req.body);
   try {
     const { name, description, source } = req.body;
 
@@ -357,11 +372,12 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 router.post('/:id/songs', authenticateToken, async (req, res) => {
+  console.log('[POST /collections/:id/songs] Operation: Create song');
+  console.log('[POST /collections/:id/songs] Params:', req.params);
+  console.log('[POST /collections/:id/songs] Body:', req.body);
   try {
     const collectionId = parseInt(req.params.id);
     const { title, trackOrder } = req.body;
-
-    console.log('Create song request:', { collectionId, title, trackOrder, body: req.body });
 
     if (isNaN(collectionId)) {
       return res.status(400).json({
@@ -403,6 +419,9 @@ router.post('/:id/songs', authenticateToken, async (req, res) => {
 
 // DELETE /collections/:collectionId/songs/:songId - Delete a song
 router.delete('/:collectionId/songs/:songId', authenticateToken, async (req, res) => {
+  console.log('[DELETE /collections/:collectionId/songs/:songId] Operation: Delete song');
+  console.log('[DELETE /collections/:collectionId/songs/:songId] Params:', req.params);
+  console.log('[DELETE /collections/:collectionId/songs/:songId] Query:', req.query);
   try {
     const collectionId = parseInt(req.params.collectionId);
     const songId = parseInt(req.params.songId);
@@ -447,6 +466,9 @@ router.delete('/:collectionId/songs/:songId', authenticateToken, async (req, res
 
 // DELETE /collections/:id - Delete a collection and all its songs
 router.delete('/:id', authenticateToken, async (req, res) => {
+  console.log('[DELETE /collections/:id] Operation: Delete collection');
+  console.log('[DELETE /collections/:id] Params:', req.params);
+  console.log('[DELETE /collections/:id] Query:', req.query);
   try {
     const collectionId = parseInt(req.params.id);
 

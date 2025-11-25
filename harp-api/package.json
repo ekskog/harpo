@@ -4,7 +4,7 @@
   "description": "Express app with MariaDB health check",
   "main": "src/server.js",
   "scripts": {
-    "start": "DEBUG=* node src/server.js",
+    "start": "node src/server.js",
     "dev": "DEBUG=* nodemon src/server.js"
   },
   "keywords": [],
