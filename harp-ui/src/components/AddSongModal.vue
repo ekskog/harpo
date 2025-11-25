@@ -2,7 +2,9 @@
   <div v-if="show" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
       <div class="p-6">
-        <h2 class="text-2xl font-bold text-slate-800 mb-4">Add Song to Collection</h2>
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">
+          Add Song to Collection
+        </h2>
 
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <div>
@@ -60,61 +62,57 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useAuth } from '../composables/useAuth.js';
+import { ref } from 'vue'
+import { useAuth } from '../composables/useAuth.js'
+import { collectionsApi } from '../services/api.js'
 
 const props = defineProps({
   show: {
     type: Boolean,
-    default: false,
+    default: false
   },
   collectionId: {
     type: [Number, String],
-    required: true,
-  },
-});
+    required: true
+  }
+})
 
-const emit = defineEmits(['close', 'song-added']);
+const emit = defineEmits(['close', 'song-added'])
 
-const { getAuthHeaders } = useAuth();
+const { getAuthHeaders } = useAuth()
 
 const form = ref({
   title: '',
-  trackOrder: null,
-});
-const loading = ref(false);
-const error = ref('');
+  trackOrder: null
+})
+const loading = ref(false)
+const error = ref('')
 
 async function handleSubmit() {
-  loading.value = true;
-  error.value = '';
+  loading.value = true
+  error.value = ''
 
   try {
-    const response = await fetch(`/api/collections/${props.collectionId}/songs`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders(),
-      },
-      body: JSON.stringify({
+    const result = await collectionsApi.createSong(
+      props.collectionId,
+      {
         title: form.value.title,
-        trackOrder: form.value.trackOrder || undefined,
-      }),
-    });
+        trackOrder: form.value.trackOrder || undefined
+      },
+      getAuthHeaders()
+    )
 
-    const result = await response.json();
-
-    if (response.ok && result.success) {
-      emit('song-added', result.data);
-      emit('close');
-      form.value = { title: '', trackOrder: null };
+    if (result.success) {
+      emit('song-added', result.data)
+      emit('close')
+      form.value = { title: '', trackOrder: null }
     } else {
-      error.value = result.message || 'Failed to add song';
+      error.value = result.message || 'Failed to add song'
     }
   } catch (err) {
-    error.value = err.message;
+    error.value = err.message
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
 </script>

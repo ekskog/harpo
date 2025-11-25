@@ -1,58 +1,42 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useAuth } from '../composables/useAuth.js';
-const API_BASE = '/api'; // This works both in dev and production
-const { isAuthenticated, user, logout } = useAuth();
+import { ref, onMounted, computed } from 'vue'
+import { useAuth } from '../composables/useAuth.js'
+import { healthApi } from '../services/api.js'
 
-const backendStatus = ref('Checking...');
-const headersInfo = ref('Loading...');
-const isHealthy = computed(() => backendStatus.value.includes('✅'));
+const { isAuthenticated, user, logout } = useAuth()
 
-const healthUrl = `${API_BASE}/health`;
-const debugUrl = `${API_BASE}/debug/headers`;
+const backendStatus = ref('Checking...')
+const headersInfo = ref('Loading...')
+const isHealthy = computed(() => backendStatus.value.includes('✅'))
 
 async function checkBackendHealth() {
   try {
-    const response = await fetch(healthUrl);
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-      const json = await response.json();
-      backendStatus.value = json.status === 'healthy' && json.database?.connected === true
-        ? '✅ Backend Connected'
-        : `⚠️ Unexpected Response: ${JSON.stringify(json)}`;
-    } else {
-      const text = await response.text();
-      backendStatus.value = `⚠️ Unexpected Response: ${text}`;
-    }
+    const result = await healthApi.check()
+    backendStatus.value = result.status === 'healthy' && result.database?.connected === true
+      ? '✅ Backend Connected'
+      : `⚠️ Unexpected Response: ${JSON.stringify(result)}`
   } catch (error) {
-    backendStatus.value = `❌ Failed: ${error.message}`;
+    backendStatus.value = `❌ Failed: ${error.message}`
   }
 }
 
 async function fetchDebugHeaders() {
   try {
-    const response = await fetch(debugUrl);
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-      const json = await response.json();
-      headersInfo.value = JSON.stringify(json, null, 2);
-    } else {
-      const text = await response.text();
-      headersInfo.value = `Non-JSON response:\n${text}`;
-    }
+    const result = await healthApi.debugHeaders()
+    headersInfo.value = JSON.stringify(result, null, 2)
   } catch (error) {
-    headersInfo.value = `Error fetching headers: ${error.message}`;
+    headersInfo.value = `Error fetching headers: ${error.message}`
   }
 }
 
 function handleLogout() {
-  logout();
+  logout()
 }
 
 onMounted(() => {
-  checkBackendHealth();
-//  fetchDebugHeaders();
-});
+  checkBackendHealth()
+  // fetchDebugHeaders()
+})
 </script>
 
 <template>

@@ -104,6 +104,9 @@ export const collectionsApi = {
   
   getById: (id) => api.get(`/collections/${id}`),
   
+  create: (collectionData, authHeaders) =>
+    api.post('/collections', collectionData, { headers: authHeaders }),
+  
   getSongs: (collectionId) => api.get(`/collections/${collectionId}/songs`),
   
   createSong: (collectionId, songData, authHeaders) => 
@@ -117,4 +120,20 @@ export const collectionsApi = {
   
   saveLyrics: (collectionId, songId, lyrics, authHeaders) => 
     api.post(`/collections/${collectionId}/songs/${songId}/lyrics`, { lyrics }, { headers: authHeaders })
+}
+
+// Auth API endpoints
+export const authApi = {
+  login: (username, password) =>
+    api.post('/auth/login', { username, password }),
+  
+  register: (username, password) =>
+    api.post('/auth/register', { username, password })
+}
+
+// Health/Debug API endpoints
+export const healthApi = {
+  check: () => api.get('/health'),
+  
+  debugHeaders: () => api.get('/debug/headers')
 }

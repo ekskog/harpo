@@ -72,50 +72,49 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useAuth } from '../composables/useAuth.js';
-import { collectionsApi } from '../services/api.js'
+import { ref } from 'vue'
+import { useAuth } from '../composables/useAuth.js'
 
 const props = defineProps({
   show: {
     type: Boolean,
-    default: false,
-  },
-});
+    default: false
+  }
+})
 
-const emit = defineEmits(['close', 'authenticated']);
+const emit = defineEmits(['close', 'authenticated'])
 
-const { login, register } = useAuth();
+const { login, register } = useAuth()
 
-const isLogin = ref(true);
+const isLogin = ref(true)
 const form = ref({
   username: '',
-  password: '',
-});
-const loading = ref(false);
-const error = ref('');
+  password: ''
+})
+const loading = ref(false)
+const error = ref('')
 
 function toggleMode() {
-  isLogin.value = !isLogin.value;
-  error.value = '';
-  form.value = { username: '', password: '' };
+  isLogin.value = !isLogin.value
+  error.value = ''
+  form.value = { username: '', password: '' }
 }
 
 async function handleSubmit() {
-  loading.value = true;
-  error.value = '';
+  loading.value = true
+  error.value = ''
 
   const result = isLogin.value
     ? await login(form.value.username, form.value.password)
-    : await register(form.value.username, form.value.password);
+    : await register(form.value.username, form.value.password)
 
-  loading.value = false;
+  loading.value = false
 
   if (result.success) {
-    emit('authenticated');
-    emit('close');
+    emit('authenticated')
+    emit('close')
   } else {
-    error.value = result.error;
+    error.value = result.error
   }
 }
 </script>
