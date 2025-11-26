@@ -83,8 +83,17 @@ router.get('/:collectionId/songs/:songId/lyrics', async (req, res) => {
       });
     }
 
-    // Get song details to find the source and track_order
+    // Get collection and song details
+    const collection = await databaseService.getCollectionById(collectionId);
     const song = await databaseService.getSongById(songId);
+    if (!collection) {
+      return res.status(404).json({
+        success: false,
+        error: 'Collection not found',
+        message: 'Collection not found',
+        timestamp: new Date().toISOString()
+      });
+    }
     if (!song) {
       return res.status(404).json({
         success: false,
@@ -103,9 +112,10 @@ router.get('/:collectionId/songs/:songId/lyrics', async (req, res) => {
       });
     }
 
-    // Construct file path: /app/harp/{source}.{track_order}.txt
-    const filePath = `/app/harp/${song.source}/${song.track_order}.txt`;
-    console.log('SOng details:', song);
+    // Construct file path: /app/harp/{collection.source}/{song.track_order}.txt
+    const filePath = `/app/harp/${collection.source}/${song.track_order}.txt`;
+    console.log('Song details:', song);
+    console.log('Collection details:', collection);
     console.log('Constructed lyrics file path:', filePath);
 
     // Read file synchronously (since lyrics files should be small)
@@ -122,7 +132,7 @@ router.get('/:collectionId/songs/:songId/lyrics', async (req, res) => {
           lyrics: lyrics,
           song_id: songId,
           title: song.title,
-          source: song.source,
+          source: collection.source,
           track_order: song.track_order
         },
         timestamp: new Date().toISOString()
@@ -147,100 +157,6 @@ router.get('/:collectionId/songs/:songId/lyrics', async (req, res) => {
   }
 });
 
-// GET /collections/:collectionId/songs/:songId/lyrics - Fetch song lyrics
-router.get('/:collectionId/songs/:songId/lyrics', async (req, res) => {
-  console.log('[GET /collections/:collectionId/songs/:songId/lyrics] Operation: Fetch song lyrics (duplicate route)');
-  console.log('[GET /collections/:collectionId/songs/:songId/lyrics] Params:', req.params);
-  console.log('[GET /collections/:collectionId/songs/:songId/lyrics] Query:', req.query);
-  try {
-    const collectionId = parseInt(req.params.collectionId);
-    const songId = parseInt(req.params.songId);
-
-    if (isNaN(collectionId) || isNaN(songId)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid IDs',
-        message: 'Collection ID and Song ID must be numbers',
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    // Fetch collection and song from database
-    const collection = await databaseService.getCollectionById(collectionId);
-    const song = await databaseService.getSongById(songId);
-
-    if (!collection) {
-      return res.status(404).json({
-        success: false,
-        error: 'Collection not found',
-        message: 'Collection not found',
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    if (!song) {
-      return res.status(404).json({
-        success: false,
-        error: 'Song not found',
-        message: 'Song not found',
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    // Verify song belongs to collection
-    if (song.collection_id !== collectionId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Song does not belong to collection',
-        message: 'Song does not belong to the specified collection',
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    // Convert collection name and song title to lowercase (removing spaces)
-    const collectionName = collection.name.toLowerCase().replace(/\s+/g, '');
-    const songName = song.title.toLowerCase().replace(/\s+/g, '');
-
-    // Construct file path
-    const lyricsPath = path.join('/harp', collectionName, `${songName}.txt`);
-    console.log('Constructed lyrics file path:', lyricsPath);
-
-    try {
-      // Read lyrics file
-      const lyrics = await fs.readFile(lyricsPath, 'utf-8');
-
-      res.status(200).json({
-        success: true,
-        data: {
-          lyrics: lyrics,
-          collection_id: collectionId,
-          collection_name: collection.name,
-          song_id: songId,
-          song_title: song.title
-        },
-        timestamp: new Date().toISOString()
-      });
-    } catch (fileError) {
-      if (fileError.code === 'ENOENT') {
-        return res.status(404).json({
-          success: false,
-          error: 'Lyrics file not found',
-          message: `Lyrics file not found at ${lyricsPath}`,
-          timestamp: new Date().toISOString()
-        });
-      }
-      throw fileError;
-    }
-  } catch (error) {
-    console.error('Error fetching song lyrics:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch song lyrics',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
-});
 
 // POST /collections/:collectionId/songs/:songId/lyrics - Save song lyrics
 router.post('/:collectionId/songs/:songId/lyrics', authenticateToken, async (req, res) => {
@@ -270,9 +186,19 @@ router.post('/:collectionId/songs/:songId/lyrics', authenticateToken, async (req
       });
     }
 
-    // Get song details to find the source and track_order
+    // Get collection and song details
+    const collection = await databaseService.getCollectionById(collectionId);
     const song = await databaseService.getSongById(songId);
     
+    if (!collection) {
+      return res.status(404).json({
+        success: false,
+        error: 'Collection not found',
+        message: 'Collection not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
     if (!song) {
       return res.status(404).json({
         success: false,
@@ -292,8 +218,8 @@ router.post('/:collectionId/songs/:songId/lyrics', authenticateToken, async (req
       });
     }
 
-    // Construct directory and file path: /harp/{source}/{track_order}.txt
-    const lyricsDir = path.join('/app/harp', song.source);
+    // Construct directory and file path: /harp/{collection.source}/{song.track_order}.txt
+    const lyricsDir = path.join('/app/harp', collection.source);
     const lyricsPath = path.join(lyricsDir, `${song.track_order}.txt`);
     
     console.log('Saving lyrics to path:', lyricsPath);
@@ -311,7 +237,7 @@ router.post('/:collectionId/songs/:songId/lyrics', authenticateToken, async (req
         collection_id: collectionId,
         song_id: songId,
         song_title: song.title,
-        source: song.source,
+        source: collection.source,
         track_order: song.track_order,
         lyrics_path: lyricsPath
       },
@@ -322,6 +248,114 @@ router.post('/:collectionId/songs/:songId/lyrics', authenticateToken, async (req
     res.status(500).json({
       success: false,
       error: 'Failed to save song lyrics',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// PATCH /collections/:collectionId/songs/:songId/lyrics - Update song lyrics
+router.patch('/:collectionId/songs/:songId/lyrics', authenticateToken, async (req, res) => {
+  console.log('[PATCH /collections/:collectionId/songs/:songId/lyrics] Operation: Update song lyrics');
+  console.log('[PATCH /collections/:collectionId/songs/:songId/lyrics] Params:', req.params);
+  console.log('[PATCH /collections/:collectionId/songs/:songId/lyrics] Body:', req.body);
+  try {
+    const collectionId = parseInt(req.params.collectionId);
+    const songId = parseInt(req.params.songId);
+    const { lyrics } = req.body;
+
+    if (isNaN(collectionId) || isNaN(songId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid IDs',
+        message: 'Collection ID and Song ID must be numbers',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (!lyrics || typeof lyrics !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid lyrics',
+        message: 'Lyrics must be provided as a string',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Get collection and song details
+    const collection = await databaseService.getCollectionById(collectionId);
+    const song = await databaseService.getSongById(songId);
+    
+    if (!collection) {
+      return res.status(404).json({
+        success: false,
+        error: 'Collection not found',
+        message: 'Collection not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (!song) {
+      return res.status(404).json({
+        success: false,
+        error: 'Song not found',
+        message: 'Song not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Verify song belongs to collection
+    if (song.collection_id !== collectionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Song does not belong to collection',
+        message: 'Song does not belong to the specified collection',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Construct directory and file path: /harp/{collection.source}/{song.track_order}.txt
+    const lyricsDir = path.join('/app/harp', collection.source);
+    const lyricsPath = path.join(lyricsDir, `${song.track_order}.txt`);
+    
+    console.log('Updating lyrics at path:', lyricsPath);
+
+    // Check if file exists
+    try {
+      await fs.access(lyricsPath);
+    } catch (fileError) {
+      return res.status(404).json({
+        success: false,
+        error: 'Lyrics file not found',
+        message: 'Lyrics file does not exist. Use POST to create new lyrics.',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Ensure directory exists (though it should)
+    await fs.mkdir(lyricsDir, { recursive: true });
+
+    // Write lyrics to file (overwrite)
+    await fs.writeFile(lyricsPath, lyrics, 'utf-8');
+
+    res.status(200).json({
+      success: true,
+      message: 'Lyrics updated successfully',
+      data: {
+        collection_id: collectionId,
+        song_id: songId,
+        song_title: song.title,
+        source: collection.source,
+        track_order: song.track_order,
+        lyrics_path: lyricsPath
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error updating song lyrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update song lyrics',
       message: error.message,
       timestamp: new Date().toISOString()
     });

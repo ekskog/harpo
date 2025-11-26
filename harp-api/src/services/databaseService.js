@@ -63,7 +63,7 @@ class DatabaseService {
     let conn;
     try {
       conn = await pool.getConnection();
-      const rows = await conn.query('SELECT * FROM songs WHERE collection_id = ? ORDER BY track_order', [collectionId]);
+      const rows = await conn.query('SELECT id, collection_id, title, track_order, created_at FROM songs WHERE collection_id = ? ORDER BY track_order', [collectionId]);
       return rows;
     } catch (error) {
       console.error('Error fetching songs by collection ID:', error);

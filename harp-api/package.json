@@ -5,7 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "DEBUG=* nodemon src/server.js"
+    "dev": "set DEBUG=*,-express:* && npx nodemon src/server.js"
   },
   "keywords": [],
   "author": "",

@@ -60,6 +60,22 @@ class ApiService {
   }
 
   /**
+   * Make a PATCH request
+   */
+  async patch(endpoint, data, options = {}) {
+    const { headers = {}, ...restOptions } = options
+    return this.request(endpoint, {
+      method: 'PATCH',
+      ...restOptions,
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      body: JSON.stringify(data)
+    })
+  }
+
+  /**
    * Make a DELETE request
    */
   async delete(endpoint, options = {}) {
@@ -144,7 +160,10 @@ export const collectionsApi = {
     api.get(`/collections/${collectionId}/songs/${songId}/lyrics`),
   
   saveLyrics: (collectionId, songId, lyrics, authHeaders) => 
-    api.post(`/collections/${collectionId}/songs/${songId}/lyrics`, { lyrics }, authHeaders ? { headers: authHeaders } : {})
+    api.post(`/collections/${collectionId}/songs/${songId}/lyrics`, { lyrics }, authHeaders ? { headers: authHeaders } : {}),
+  
+  updateLyrics: (collectionId, songId, lyrics, authHeaders) => 
+    api.patch(`/collections/${collectionId}/songs/${songId}/lyrics`, { lyrics }, authHeaders ? { headers: authHeaders } : {})
 }
 
 // Auth API endpoints

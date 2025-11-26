@@ -15,7 +15,7 @@
           </h2>
           <button
             @click="$emit('close')"
-            class="text-slate-400 hover:text-slate-600 p-1 -mt-1"
+            class="text-slate-400 hover:text-slate-600 p-1 -mt-1 hover:bg-slate-200 rounded transition-colors"
             title="Close collection"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,9 +43,12 @@
           <button
             v-if="isAuthenticated"
             @click="showAddSong = true"
-            class="px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
+            class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
+            title="Add Song"
           >
-            + Add Song
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
           </button>
         </div>
         <div v-if="collection.songs.length === 0" class="text-gray-500 italic">
@@ -73,7 +76,7 @@
             <button
               v-if="isAuthenticated"
               @click.stop="deleteSong(song.id)"
-              class="text-red-600 hover:text-red-800 p-1 ml-2"
+              class="text-red-600 hover:bg-red-50 p-1 ml-2 rounded transition-colors"
               title="Delete song"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,7 +98,7 @@
             </div>
             <button
               @click="closeLyricsPanel"
-              class="text-slate-500 hover:text-slate-700 p-2"
+              class="text-slate-500 hover:text-slate-700 p-2 hover:bg-slate-200 rounded transition-colors"
               title="Close"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,8 +112,48 @@
                 Loading lyrics...
               </div>
             </div>
-            <div v-else-if="lyrics" class="prose max-w-none">
+            <div v-else-if="lyrics && !showEditLyricsForm" class="prose max-w-none">
+              <div class="flex justify-end mb-4">
+                <button
+                  v-if="isAuthenticated"
+                  @click="startEditLyrics"
+                  class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
+                  title="Edit Lyrics"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+              </div>
               <pre class="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">{{ lyrics }}</pre>
+            </div>
+            <div v-else-if="showEditLyricsForm" class="max-w-2xl mx-auto text-left">
+              <textarea
+                v-model="editLyrics"
+                placeholder="Enter lyrics here..."
+                class="w-full h-64 p-4 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 font-sans"
+              />
+              <div class="flex gap-2 mt-4 justify-end">
+                <button
+                  @click="cancelEditLyrics"
+                  class="p-2 text-slate-700 hover:bg-slate-200 rounded-md transition-colors"
+                  title="Cancel"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <button
+                  @click="submitEditLyrics"
+                  :disabled="!editLyrics.trim() || savingLyrics"
+                  class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Save Changes"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
+              </div>
             </div>
             <div v-else class="text-center py-12">
               <p v-if="lyricsError" class="text-red-600 mb-4">
@@ -123,9 +166,12 @@
               <div v-if="isAuthenticated && !showAddLyricsForm">
                 <button
                   @click="showAddLyricsForm = true"
-                  class="px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
+                  class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
+                  title="Add Lyrics"
                 >
-                  Add Lyrics
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
                 </button>
               </div>
               
@@ -138,16 +184,22 @@
                 <div class="flex gap-2 mt-4 justify-end">
                   <button
                     @click="cancelAddLyrics"
-                    class="px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50"
+                    class="p-2 text-slate-700 hover:bg-slate-200 rounded-md transition-colors"
+                    title="Cancel"
                   >
-                    Cancel
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
                   <button
                     @click="submitLyrics"
                     :disabled="!newLyrics.trim() || savingLyrics"
-                    class="px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Save Lyrics"
                   >
-                    {{ savingLyrics ? 'Saving...' : 'Save Lyrics' }}
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -200,6 +252,8 @@ const lyricsError = ref('')
 const showAddLyricsForm = ref(false)
 const newLyrics = ref('')
 const savingLyrics = ref(false)
+const showEditLyricsForm = ref(false)
+const editLyrics = ref('')
 
 function formatDate(dateString) {
   if (!dateString) return ''
@@ -297,11 +351,23 @@ function closeLyricsPanel() {
   lyricsError.value = ''
   showAddLyricsForm.value = false
   newLyrics.value = ''
+  showEditLyricsForm.value = false
+  editLyrics.value = ''
 }
 
 function cancelAddLyrics() {
   showAddLyricsForm.value = false
   newLyrics.value = ''
+}
+
+function startEditLyrics() {
+  showEditLyricsForm.value = true
+  editLyrics.value = lyrics.value
+}
+
+function cancelEditLyrics() {
+  showEditLyricsForm.value = false
+  editLyrics.value = ''
 }
 
 async function submitLyrics() {
@@ -327,8 +393,42 @@ async function submitLyrics() {
   }
 }
 
+async function submitEditLyrics() {
+  if (!editLyrics.value.trim() || !selectedSong.value || !props.collectionId) return
+
+  savingLyrics.value = true
+
+  try {
+    await collectionsApi.updateLyrics(
+      props.collectionId,
+      selectedSong.value.id,
+      editLyrics.value,
+      getAuthHeaders()
+    )
+    
+    lyrics.value = editLyrics.value
+    showEditLyricsForm.value = false
+    editLyrics.value = ''
+  } catch (err) {
+    alert(err.message)
+  } finally {
+    savingLyrics.value = false
+  }
+}
+
 // Watch for changes to collectionId and collection props
 watch([() => props.collectionId, () => props.collection], () => {
+  // Reset lyrics panel state when collection changes
+  showLyricsPanel.value = false
+  selectedSong.value = null
+  lyrics.value = ''
+  lyricsError.value = ''
+  showAddLyricsForm.value = false
+  newLyrics.value = ''
+  showEditLyricsForm.value = false
+  editLyrics.value = ''
+  savingLyrics.value = false
+  
   fetchCollection()
 }, { immediate: true })
 </script>
