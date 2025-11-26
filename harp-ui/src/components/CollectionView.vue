@@ -10,9 +10,24 @@
       <!-- Collection Details -->
       <div class="bg-white rounded-lg shadow-md p-6">
         <div class="flex items-start justify-between mb-2">
-          <h2 class="text-2xl font-bold text-slate-800">
-            {{ collection.name }}
-          </h2>
+          <div class="flex items-center">
+            <img 
+              v-if="collection.id"
+              :src="`/api/collections/${collection.id}/cover`" 
+              class="w-16 h-16 mr-4 rounded object-cover cursor-pointer hover:opacity-80 transition-opacity"
+              @error="handleImageError"
+              @click="openImageModal"
+              alt="Collection cover"
+            />
+            <div>
+              <h2 class="text-2xl font-bold text-slate-800">
+                {{ collection.name }}
+              </h2>
+              <p v-if="collection.description" class="text-slate-600 mt-1">
+                {{ collection.description }}
+              </p>
+            </div>
+          </div>
           <button
             @click="$emit('close')"
             class="text-slate-400 hover:text-slate-600 p-1 -mt-1 hover:bg-slate-200 rounded transition-colors"
@@ -23,12 +38,6 @@
             </svg>
           </button>
         </div>
-        <p v-if="collection.description" class="text-slate-600 mb-4">
-          {{ collection.description }}
-        </p>
-        <p class="text-sm text-slate-500">
-          Created: {{ formatDate(collection.created_at) }}
-        </p>
       </div>
 
       <!-- Songs List -->
@@ -216,6 +225,14 @@
       @close="showAddSong = false"
       @song-added="handleSongAdded"
     />
+
+    <!-- Image Modal -->
+    <ImageModal
+      :show="showImageModal"
+      :image-src="collection.id ? `/api/collections/${collection.id}/cover` : ''"
+      alt="Collection cover"
+      @close="showImageModal = false"
+    />
   </div>
 </template>
 
@@ -224,6 +241,7 @@ import { ref, watch } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
 import { collectionsApi } from '../services/api.js'
 import AddSongModal from './AddSongModal.vue'
+import ImageModal from './ImageModal.vue'
 
 const props = defineProps({
   collectionId: {
@@ -254,15 +272,14 @@ const newLyrics = ref('')
 const savingLyrics = ref(false)
 const showEditLyricsForm = ref(false)
 const editLyrics = ref('')
+const showImageModal = ref(false)
 
-function formatDate(dateString) {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+function handleImageError(event) {
+  event.target.style.display = 'none'
+}
+
+function openImageModal() {
+  showImageModal.value = true
 }
 
 async function fetchCollection() {

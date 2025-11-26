@@ -542,4 +542,80 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /collections/:id/cover - Get collection cover image
+router.get('/:id/cover', async (req, res) => {
+  console.log('[GET /collections/:id/cover] Operation: Get collection cover');
+  console.log('[GET /collections/:id/cover] Params:', req.params);
+  try {
+    const collectionId = parseInt(req.params.id);
+
+    if (isNaN(collectionId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid collection ID',
+        message: 'Collection ID must be a number',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Get collection details
+    const collection = await databaseService.getCollectionById(collectionId);
+    if (!collection) {
+      return res.status(404).json({
+        success: false,
+        error: 'Collection not found',
+        message: 'Collection not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (!collection.source) {
+      return res.status(404).json({
+        success: false,
+        error: 'Collection has no source',
+        message: 'Collection cover not available',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Construct cover image path: /app/harp/{source}/folder.jpg
+    const coverPath = path.join('/app/harp', collection.source, 'folder.jpg');
+    console.log('Cover image path:', coverPath);
+
+    // Check if file exists
+    const fs = require('fs');
+    if (!fs.existsSync(coverPath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Cover image not found',
+        message: `Cover image not found at ${coverPath}`,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Serve the image file
+    try {
+      const imageBuffer = fs.readFileSync(coverPath);
+      res.setHeader('Content-Type', 'image/jpeg'); // Assuming JPEG, could detect from file
+      res.send(imageBuffer);
+    } catch (fileError) {
+      console.error('Error reading image file:', fileError);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to read image file',
+        message: fileError.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching collection cover:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch collection cover',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 module.exports = router;
