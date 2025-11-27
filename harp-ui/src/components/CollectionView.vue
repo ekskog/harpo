@@ -40,6 +40,23 @@
               </svg>
             </button>
             <button
+              v-if="isAuthenticated"
+              @click="$refs.coverUpload.click()"
+              class="p-2 text-slate-600 hover:bg-slate-200 rounded-md transition-colors"
+              title="Upload Cover Image"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </button>
+            <input
+              ref="coverUpload"
+              type="file"
+              accept="image/*"
+              @change="handleCoverUpload"
+              class="hidden"
+            />
+            <button
               @click="$emit('close')"
               class="text-slate-400 hover:text-slate-600 p-1 -mt-1 hover:bg-slate-200 rounded transition-colors"
               title="Close collection"
@@ -326,6 +343,47 @@ function handleImageError(event) {
 
 function openImageModal() {
   showImageModal.value = true
+}
+
+async function handleCoverUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    alert('Please select an image file')
+    return
+  }
+
+  // Validate file size (10MB limit)
+  if (file.size > 10 * 1024 * 1024) {
+    alert('File size must be less than 10MB')
+    return
+  }
+
+  try {
+    const formData = new FormData()
+    formData.append('cover', file)
+
+    const result = await collectionsApi.uploadCover(props.collectionId, formData, getAuthHeaders())
+
+    if (result.success) {
+      alert('Cover image uploaded successfully!')
+      // Force refresh of the cover image by adding a timestamp
+      // This will trigger a re-render and show the new image
+      const img = document.querySelector(`img[alt="Collection cover"]`)
+      if (img) {
+        img.src = `/api/collections/${props.collection.id}/cover?t=${Date.now()}`
+      }
+    } else {
+      alert(result.message || 'Failed to upload cover image')
+    }
+  } catch (error) {
+    alert('Error uploading cover image: ' + error.message)
+  } finally {
+    // Clear the file input
+    event.target.value = ''
+  }
 }
 
 async function fetchCollection() {

@@ -19,27 +19,31 @@ class ApiService {
   }
 
   /**
-   * Make a POST request
+   * Make a POST request (supports both JSON and FormData)
    */
   async post(endpoint, data, options = {}) {
     console.log('[ApiService.post] Endpoint:', endpoint)
-    console.log('[ApiService.post] Data:', data)
     console.log('[ApiService.post] Data type:', typeof data)
-    console.log('[ApiService.post] Stringified body:', JSON.stringify(data))
     
     const { headers = {}, ...restOptions } = options
-    const bodyString = JSON.stringify(data)
     
-    console.log('[ApiService.post] Final body string:', bodyString)
+    // Check if data is FormData
+    const isFormData = data instanceof FormData
+    
+    if (!isFormData) {
+      console.log('[ApiService.post] Data:', data)
+      console.log('[ApiService.post] Stringified body:', JSON.stringify(data))
+    }
     
     return this.request(endpoint, {
       method: 'POST',
       ...restOptions,
       headers: {
-        'Content-Type': 'application/json',
+        // Don't set Content-Type for FormData, let browser set it with boundary
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
         ...headers
       },
-      body: bodyString
+      body: isFormData ? data : JSON.stringify(data)
     })
   }
 
@@ -150,6 +154,9 @@ export const collectionsApi = {
   
   update: (id, collectionData, authHeaders) =>
     api.patch(`/collections/${id}`, collectionData, authHeaders ? { headers: authHeaders } : {}),
+  
+  uploadCover: (id, formData, authHeaders) =>
+    api.post(`/collections/${id}/cover`, formData, authHeaders ? { headers: authHeaders } : {}),
   
   getSongs: (collectionId) => api.get(`/collections/${collectionId}/songs`),
   

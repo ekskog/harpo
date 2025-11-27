@@ -2,8 +2,25 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs').promises;
 const path = require('path');
+const multer = require('multer');
 const databaseService = require('../services/databaseService');
 const { authenticateToken } = require('../middleware/auth');
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(), // Store file in memory temporarily
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Check if file is an image
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 
 router.get('/', async (req, res) => {
   console.log('[GET /collections] Operation: Get all collections');
@@ -783,6 +800,91 @@ router.get('/:id/cover', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch collection cover',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// POST /collections/:id/cover - Upload collection cover image
+router.post('/:id/cover', authenticateToken, upload.single('cover'), async (req, res) => {
+  console.log('[POST /collections/:id/cover] Operation: Upload collection cover');
+  console.log('[POST /collections/:id/cover] Params:', req.params);
+  console.log('[POST /collections/:id/cover] File:', req.file ? { originalname: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size } : 'No file');
+
+  try {
+    const collectionId = parseInt(req.params.id);
+
+    if (isNaN(collectionId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid collection ID',
+        message: 'Collection ID must be a number',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Check if file was uploaded
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No file uploaded',
+        message: 'Please upload an image file',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Get collection details
+    const collection = await databaseService.getCollectionById(collectionId);
+    if (!collection) {
+      return res.status(404).json({
+        success: false,
+        error: 'Collection not found',
+        message: 'Collection not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (!collection.source) {
+      return res.status(400).json({
+        success: false,
+        error: 'Collection has no source',
+        message: 'Cannot upload cover for collection without source',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Construct directory and file path: /app/harp/{source}/folder.jpg
+    const coverDir = path.join('/app/harp', collection.source);
+    const coverPath = path.join(coverDir, 'folder.jpg');
+
+    console.log('Uploading cover to path:', coverPath);
+
+    // Ensure directory exists
+    await fs.mkdir(coverDir, { recursive: true });
+
+    // Write the uploaded file buffer to folder.jpg
+    await fs.writeFile(coverPath, req.file.buffer);
+
+    res.status(200).json({
+      success: true,
+      message: 'Cover image uploaded successfully',
+      data: {
+        collection_id: collectionId,
+        collection_name: collection.name,
+        source: collection.source,
+        cover_path: coverPath,
+        original_filename: req.file.originalname,
+        file_size: req.file.size,
+        mimetype: req.file.mimetype
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error uploading collection cover:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to upload collection cover',
       message: error.message,
       timestamp: new Date().toISOString()
     });
