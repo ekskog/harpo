@@ -129,6 +129,50 @@ class DatabaseService {
     }
   }
 
+  async updateCollection(collectionId, updates) {
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      
+      const fields = [];
+      const values = [];
+      
+      if (updates.name !== undefined) {
+        fields.push('name = ?');
+        values.push(updates.name);
+      }
+      if (updates.description !== undefined) {
+        fields.push('description = ?');
+        values.push(updates.description);
+      }
+      if (updates.source !== undefined) {
+        fields.push('source = ?');
+        values.push(updates.source);
+      }
+      
+      if (fields.length === 0) {
+        throw new Error('No fields to update');
+      }
+      
+      const query = `UPDATE collections SET ${fields.join(', ')} WHERE id = ?`;
+      values.push(collectionId);
+      
+      const result = await conn.query(query, values);
+      
+      if (result.affectedRows === 0) {
+        return null; // Collection not found
+      }
+      
+      // Return the updated collection
+      return await this.getCollectionById(collectionId);
+    } catch (error) {
+      console.error('Error updating collection:', error);
+      throw error;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
   async createSong(collectionId, title, artist, duration = null, trackOrder = null) {
     let conn;
     try {
@@ -137,6 +181,46 @@ class DatabaseService {
       return { id: Number(result.insertId), collectionId, title, trackOrder };
     } catch (error) {
       console.error('Error creating song:', error);
+      throw error;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  async updateSong(songId, updates) {
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      
+      const fields = [];
+      const values = [];
+      
+      if (updates.title !== undefined) {
+        fields.push('title = ?');
+        values.push(updates.title);
+      }
+      if (updates.track_order !== undefined) {
+        fields.push('track_order = ?');
+        values.push(updates.track_order);
+      }
+      
+      if (fields.length === 0) {
+        throw new Error('No fields to update');
+      }
+      
+      const query = `UPDATE songs SET ${fields.join(', ')} WHERE id = ?`;
+      values.push(songId);
+      
+      const result = await conn.query(query, values);
+      
+      if (result.affectedRows === 0) {
+        return null; // Song not found
+      }
+      
+      // Return the updated song
+      return await this.getSongById(songId);
+    } catch (error) {
+      console.error('Error updating song:', error);
       throw error;
     } finally {
       if (conn) conn.release();

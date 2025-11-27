@@ -405,6 +405,86 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
+router.patch('/:id', authenticateToken, async (req, res) => {
+  console.log('[PATCH /collections/:id] Operation: Update collection');
+  console.log('[PATCH /collections/:id] Params:', req.params);
+  console.log('[PATCH /collections/:id] Body:', req.body);
+  try {
+    const collectionId = parseInt(req.params.id);
+    const { name, description, source } = req.body;
+
+    if (isNaN(collectionId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid collection ID',
+        message: 'Collection ID must be a number',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Check if at least one field is provided
+    if (name === undefined && description === undefined && source === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'No fields to update',
+        message: 'At least one field (name, description, or source) must be provided',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Validate name if provided
+    if (name !== undefined && (!name || typeof name !== 'string' || name.trim().length === 0)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid collection name',
+        message: 'Collection name must be a non-empty string',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Validate source if provided
+    if (source !== undefined && (!source || typeof source !== 'string' || source.trim().length === 0)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid source',
+        message: 'Source must be a non-empty string',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const updates = {};
+    if (name !== undefined) updates.name = name.trim();
+    if (description !== undefined) updates.description = description;
+    if (source !== undefined) updates.source = source.trim();
+
+    const updatedCollection = await databaseService.updateCollection(collectionId, updates);
+
+    if (!updatedCollection) {
+      return res.status(404).json({
+        success: false,
+        error: 'Collection not found',
+        message: 'Collection not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Collection updated successfully',
+      data: updatedCollection,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error updating collection:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update collection',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 router.post('/:id/songs', authenticateToken, async (req, res) => {
   console.log('[POST /collections/:id/songs] Operation: Create song');
   console.log('[POST /collections/:id/songs] Params:', req.params);
@@ -445,6 +525,97 @@ router.post('/:id/songs', authenticateToken, async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to add song',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+router.patch('/:collectionId/songs/:songId', authenticateToken, async (req, res) => {
+  console.log('[PATCH /collections/:collectionId/songs/:songId] Operation: Update song');
+  console.log('[PATCH /collections/:collectionId/songs/:songId] Params:', req.params);
+  console.log('[PATCH /collections/:collectionId/songs/:songId] Body:', req.body);
+  try {
+    const collectionId = parseInt(req.params.collectionId);
+    const songId = parseInt(req.params.songId);
+    const { title, trackOrder } = req.body;
+
+    if (isNaN(collectionId) || isNaN(songId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid IDs',
+        message: 'Collection ID and Song ID must be numbers',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Check if at least one field is provided
+    if (title === undefined && trackOrder === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'No fields to update',
+        message: 'At least one field (title or trackOrder) must be provided',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Validate title if provided
+    if (title !== undefined && (!title || typeof title !== 'string' || title.trim().length === 0)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid song title',
+        message: 'Title must be a non-empty string',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Validate trackOrder if provided
+    if (trackOrder !== undefined && (isNaN(trackOrder) || trackOrder < 1)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid track order',
+        message: 'Track order must be a positive number',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Get the song to verify it exists and belongs to the collection
+    const song = await databaseService.getSongById(songId);
+    if (!song) {
+      return res.status(404).json({
+        success: false,
+        error: 'Song not found',
+        message: 'Song not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (song.collection_id !== collectionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Song does not belong to collection',
+        message: 'Song does not belong to the specified collection',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const updates = {};
+    if (title !== undefined) updates.title = title.trim();
+    if (trackOrder !== undefined) updates.track_order = trackOrder;
+
+    const updatedSong = await databaseService.updateSong(songId, updates);
+
+    res.status(200).json({
+      success: true,
+      message: 'Song updated successfully',
+      data: updatedSong,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error updating song:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update song',
       message: error.message,
       timestamp: new Date().toISOString()
     });

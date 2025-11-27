@@ -28,15 +28,27 @@
               </p>
             </div>
           </div>
-          <button
-            @click="$emit('close')"
-            class="text-slate-400 hover:text-slate-600 p-1 -mt-1 hover:bg-slate-200 rounded transition-colors"
-            title="Close collection"
-          >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div class="flex items-center space-x-2">
+            <button
+              v-if="isAuthenticated"
+              @click="showEditCollection = true"
+              class="p-2 text-slate-600 hover:bg-slate-200 rounded-md transition-colors"
+              title="Edit Collection"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+            <button
+              @click="$emit('close')"
+              class="text-slate-400 hover:text-slate-600 p-1 -mt-1 hover:bg-slate-200 rounded transition-colors"
+              title="Close collection"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -82,16 +94,28 @@
                 {{ song.title }}
               </button>
             </div>
-            <button
-              v-if="isAuthenticated"
-              @click.stop="deleteSong(song.id)"
-              class="text-red-600 hover:bg-red-50 p-1 ml-2 rounded transition-colors"
-              title="Delete song"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
+            <div class="flex items-center space-x-1">
+              <button
+                v-if="isAuthenticated"
+                @click.stop="editSong(song)"
+                class="text-slate-600 hover:bg-slate-200 p-1 rounded transition-colors"
+                title="Edit song"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button
+                v-if="isAuthenticated"
+                @click.stop="deleteSong(song.id)"
+                class="text-red-600 hover:bg-red-50 p-1 ml-2 rounded transition-colors"
+                title="Delete song"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
           </li>
         </ol>
       </div>
@@ -233,6 +257,23 @@
       alt="Collection cover"
       @close="showImageModal = false"
     />
+
+    <!-- Edit Collection Modal -->
+    <EditCollectionModal
+      :show="showEditCollection"
+      :collection="collection"
+      @close="showEditCollection = false"
+      @collection-updated="handleCollectionUpdated"
+    />
+
+    <!-- Edit Song Modal -->
+    <EditSongModal
+      :show="showEditSong"
+      :collection-id="collectionId"
+      :song="songToEdit"
+      @close="showEditSong = false"
+      @song-updated="handleSongUpdated"
+    />
   </div>
 </template>
 
@@ -241,6 +282,8 @@ import { ref, watch } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
 import { collectionsApi } from '../services/api.js'
 import AddSongModal from './AddSongModal.vue'
+import EditCollectionModal from './EditCollectionModal.vue'
+import EditSongModal from './EditSongModal.vue'
 import ImageModal from './ImageModal.vue'
 
 const props = defineProps({
@@ -273,6 +316,9 @@ const savingLyrics = ref(false)
 const showEditLyricsForm = ref(false)
 const editLyrics = ref('')
 const showImageModal = ref(false)
+const showEditCollection = ref(false)
+const showEditSong = ref(false)
+const songToEdit = ref(null)
 
 function handleImageError(event) {
   event.target.style.display = 'none'
@@ -326,6 +372,33 @@ async function deleteSong(songId) {
 
 function handleSongAdded(newSong) {
   collection.value.songs.push(newSong)
+}
+
+function handleCollectionUpdated(updatedCollection) {
+  // Update the collection data
+  collection.value = {
+    ...collection.value,
+    ...updatedCollection
+  }
+  // Emit to parent to refresh collections list
+  emit('refresh-collections')
+}
+
+function handleSongUpdated(updatedSong) {
+  // Update the song in the local collection
+  const index = collection.value.songs.findIndex(song => song.id === updatedSong.id)
+  if (index !== -1) {
+    collection.value.songs[index] = updatedSong
+  }
+  // Update selected song if it's the one being edited
+  if (selectedSong.value?.id === updatedSong.id) {
+    selectedSong.value = updatedSong
+  }
+}
+
+function editSong(song) {
+  songToEdit.value = song
+  showEditSong.value = true
 }
 
 async function showLyrics(song) {
@@ -445,6 +518,9 @@ watch([() => props.collectionId, () => props.collection], () => {
   showEditLyricsForm.value = false
   editLyrics.value = ''
   savingLyrics.value = false
+  showEditCollection.value = false
+  showEditSong.value = false
+  songToEdit.value = null
   
   fetchCollection()
 }, { immediate: true })

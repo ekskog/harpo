@@ -148,10 +148,16 @@ export const collectionsApi = {
   create: (collectionData, authHeaders) =>
     api.post('/collections', collectionData, authHeaders ? { headers: authHeaders } : {}),
   
+  update: (id, collectionData, authHeaders) =>
+    api.patch(`/collections/${id}`, collectionData, authHeaders ? { headers: authHeaders } : {}),
+  
   getSongs: (collectionId) => api.get(`/collections/${collectionId}/songs`),
   
   createSong: (collectionId, songData, authHeaders) => 
     api.post(`/collections/${collectionId}/songs`, songData, authHeaders ? { headers: authHeaders } : {}),
+  
+  updateSong: (collectionId, songId, songData, authHeaders) => 
+    api.patch(`/collections/${collectionId}/songs/${songId}`, songData, authHeaders ? { headers: authHeaders } : {}),
   
   deleteSong: (collectionId, songId, authHeaders) => 
     api.delete(`/collections/${collectionId}/songs/${songId}`, authHeaders ? { headers: authHeaders } : {}),
