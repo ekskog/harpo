@@ -5,7 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "DEBUG=* nodemon src/server.js"
+    "dev": "DEBUG=*,-express:\\*,-nodemon:\\* nodemon --quiet src/server.js"
   },
   "keywords": [],
   "author": "",

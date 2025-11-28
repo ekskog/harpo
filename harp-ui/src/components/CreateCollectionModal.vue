@@ -51,6 +51,22 @@
             />
           </div>
 
+          <div>
+            <label for="bandcamp_url" class="block text-sm font-medium text-slate-700 mb-1">
+              Bandcamp URL (optional)
+            </label>
+            <input
+              id="bandcamp_url"
+              v-model="form.bandcamp_url"
+              type="url"
+              class="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+              placeholder="https://yourbandcamp.bandcamp.com/album/your-album"
+            />
+            <p class="text-xs text-slate-500 mt-1">
+              Link to the collection on Bandcamp (if available)
+            </p>
+          </div>
+
           <div v-if="error" class="text-red-600 text-sm">
             {{ error }}
           </div>
@@ -96,7 +112,8 @@ const { getAuthHeaders } = useAuth()
 const form = ref({
   name: '',
   source: '',
-  description: ''
+  description: '',
+  bandcamp_url: ''
 })
 const loading = ref(false)
 const error = ref('')
@@ -111,7 +128,7 @@ async function handleSubmit() {
     if (result.success) {
       emit('collection-created', result.data)
       emit('close')
-      form.value = { name: '', source: '', description: '' }
+      form.value = { name: '', source: '', description: '', bandcamp_url: '' }
     } else {
       error.value = result.message || 'Failed to create collection'
     }

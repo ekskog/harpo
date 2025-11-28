@@ -115,12 +115,12 @@ class DatabaseService {
     }
   }
 
-  async createCollection(name, description = null, source = null) {
+  async createCollection(name, description = null, source = null, bandcamp_url = null) {
     let conn;
     try {
       conn = await pool.getConnection();
-      const result = await conn.query('INSERT INTO collections (name, description, source, created_at) VALUES (?, ?, ?, NOW())', [name, description, source]);
-      return { id: Number(result.insertId), name, description, source };
+      const result = await conn.query('INSERT INTO collections (name, description, source, bandcamp_url, created_at) VALUES (?, ?, ?, ?, NOW())', [name, description, source, bandcamp_url]);
+      return { id: Number(result.insertId), name, description, source, bandcamp_url };
     } catch (error) {
       console.error('Error creating collection:', error);
       throw error;

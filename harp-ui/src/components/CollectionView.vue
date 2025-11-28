@@ -10,8 +10,13 @@
       <!-- Collection Details -->
       <div class="bg-white rounded-lg shadow-md p-6">
         <div class="flex items-start justify-between mb-2">
-          <h2 class="text-2xl font-bold text-slate-800">
+          <h2 class="text-2xl font-bold text-slate-800 flex items-center">
             {{ collection.name }}
+            <a v-if="collection.bandcamp_url" :href="collection.bandcamp_url" target="_blank" class="ml-2" title="Available on Bandcamp">
+              <svg class="w-6 h-6 text-blue-300 hover:text-blue-500" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M354.27,407.291H0.5l157.231-302.582H511.5L354.27,407.291z"/>
+              </svg>
+            </a>
           </h2>
           <button
             @click="$emit('close')"

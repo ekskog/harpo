@@ -333,8 +333,10 @@ router.post('/', authenticateToken, async (req, res) => {
   console.log('[POST /collections] Operation: Create collection');
   console.log('[POST /collections] Params:', req.params);
   console.log('[POST /collections] Body:', req.body);
+  console.log('Request body bandcamp_url:', req.body.bandcamp_url);
   try {
-    const { name, description, source } = req.body;
+    const { name, description, source, bandcamp_url } = req.body;
+    console.log('Extracted bandcamp_url:', bandcamp_url);
 
     if (!name) {
       return res.status(400).json({
@@ -352,7 +354,8 @@ router.post('/', authenticateToken, async (req, res) => {
         timestamp: new Date().toISOString()
       });
     }
-    const newCollection = await databaseService.createCollection(name, description, source);
+    const newCollection = await databaseService.createCollection(name, description, source, bandcamp_url);
+    console.log('Created collection:', newCollection);
 
     res.status(201).json({
       success: true,
@@ -369,9 +372,7 @@ router.post('/', authenticateToken, async (req, res) => {
       timestamp: new Date().toISOString()
     });
   }
-});
-
-router.post('/:id/songs', authenticateToken, async (req, res) => {
+});router.post('/:id/songs', authenticateToken, async (req, res) => {
   console.log('[POST /collections/:id/songs] Operation: Create song');
   console.log('[POST /collections/:id/songs] Params:', req.params);
   console.log('[POST /collections/:id/songs] Body:', req.body);
