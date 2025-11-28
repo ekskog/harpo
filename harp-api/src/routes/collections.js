@@ -7,6 +7,14 @@ const databaseService = require('../services/databaseService');
 const { authenticateToken } = require('../middleware/auth');
 
 // Configure multer for file uploads
+const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp'];
+const IMAGE_MIME_TYPES = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp'
+};
+
 const upload = multer({
   storage: multer.memoryStorage(), // Store file in memory temporarily
   limits: {
@@ -168,6 +176,218 @@ router.get('/:collectionId/songs/:songId/lyrics', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch song lyrics',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// GET /collections/:collectionId/songs/:songId/image - Get song image
+router.get('/:collectionId/songs/:songId/image', async (req, res) => {
+  console.log('[GET /collections/:collectionId/songs/:songId/image] Operation: Get song image');
+  console.log('[GET /collections/:collectionId/songs/:songId/image] Params:', req.params);
+  try {
+    const collectionId = parseInt(req.params.collectionId);
+    const songId = parseInt(req.params.songId);
+
+    if (isNaN(collectionId) || isNaN(songId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid IDs',
+        message: 'Collection ID and Song ID must be numbers',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const collection = await databaseService.getCollectionById(collectionId);
+    const song = await databaseService.getSongById(songId);
+
+    if (!collection) {
+      return res.status(404).json({
+        success: false,
+        error: 'Collection not found',
+        message: 'Collection not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (!song) {
+      return res.status(404).json({
+        success: false,
+        error: 'Song not found',
+        message: 'Song not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (song.collection_id !== collectionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Song not in collection',
+        message: 'Song does not belong to the specified collection',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const imageDir = path.join('/app/harp', collection.source);
+    let imagePath = '';
+    let imageExtension = '';
+
+    for (const ext of IMAGE_EXTENSIONS) {
+      const candidatePath = path.join(imageDir, `${song.track_order}${ext}`);
+      try {
+        await fs.access(candidatePath);
+        imagePath = candidatePath;
+        imageExtension = ext;
+        break;
+      } catch (err) {
+        // Continue searching other extensions
+      }
+    }
+
+    if (!imagePath) {
+      return res.status(404).json({
+        success: false,
+        error: 'Image not found',
+        message: `No image file found for song ${song.track_order}`,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    try {
+      const imageBuffer = await fs.readFile(imagePath);
+      const mimeType = IMAGE_MIME_TYPES[imageExtension] || 'application/octet-stream';
+
+      res.set('Content-Type', mimeType);
+      res.set('Cache-Control', 'no-cache');
+      return res.send(imageBuffer);
+    } catch (fileError) {
+      console.error('Error reading image file:', fileError);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to read image file',
+        message: fileError.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching song image:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch song image',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// POST /collections/:collectionId/songs/:songId/image - Upload song image
+router.post('/:collectionId/songs/:songId/image', authenticateToken, upload.single('image'), async (req, res) => {
+  console.log('[POST /collections/:collectionId/songs/:songId/image] Operation: Upload song image');
+  console.log('[POST /collections/:collectionId/songs/:songId/image] Params:', req.params);
+  console.log('[POST /collections/:collectionId/songs/:songId/image] File:', req.file ? { originalname: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size } : 'No file');
+  try {
+    const collectionId = parseInt(req.params.collectionId);
+    const songId = parseInt(req.params.songId);
+
+    if (isNaN(collectionId) || isNaN(songId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid IDs',
+        message: 'Collection ID and Song ID must be numbers',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No image file provided',
+        message: 'Please upload an image file',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const collection = await databaseService.getCollectionById(collectionId);
+    const song = await databaseService.getSongById(songId);
+
+    if (!collection) {
+      return res.status(404).json({
+        success: false,
+        error: 'Collection not found',
+        message: 'Collection not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (!song) {
+      return res.status(404).json({
+        success: false,
+        error: 'Song not found',
+        message: 'Song not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (song.collection_id !== collectionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Song not in collection',
+        message: 'Song does not belong to the specified collection',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const imageDir = path.join('/app/harp', collection.source);
+    const originalExtension = path.extname(req.file.originalname)?.toLowerCase();
+    const isSupportedExtension = IMAGE_EXTENSIONS.includes(originalExtension);
+    const extension = isSupportedExtension
+      ? originalExtension
+      : (() => {
+          const [type, subType] = req.file.mimetype.split('/');
+          if (type === 'image') {
+            const mimeExtension = `.${subType}`;
+            if (IMAGE_EXTENSIONS.includes(mimeExtension)) {
+              return mimeExtension;
+            }
+          }
+          return '.png';
+        })();
+
+    // Remove any existing images for this song (all supported extensions)
+    await Promise.all(
+      IMAGE_EXTENSIONS.map(async (ext) => {
+        const existingPath = path.join(imageDir, `${song.track_order}${ext}`);
+        try {
+          await fs.unlink(existingPath);
+        } catch (err) {
+          if (err.code !== 'ENOENT') {
+            console.warn(`Failed to remove existing image ${existingPath}:`, err.message);
+          }
+        }
+      })
+    );
+
+    const imagePath = path.join(imageDir, `${song.track_order}${extension}`);
+    await fs.mkdir(imageDir, { recursive: true });
+    await fs.writeFile(imagePath, req.file.buffer);
+
+    res.status(200).json({
+      success: true,
+      message: 'Song image uploaded successfully',
+      data: {
+        collection_id: collectionId,
+        song_id: songId,
+        track_order: song.track_order,
+        image_path: imagePath
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error uploading song image:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to upload song image',
       message: error.message,
       timestamp: new Date().toISOString()
     });

@@ -161,7 +161,7 @@
               </svg>
             </button>
           </div>
-          <div class="p-6">
+          <div class="p-6 flex flex-col gap-6">
             <div v-if="loadingLyrics" class="text-center py-12">
               <div class="text-slate-500">
                 Loading lyrics...
@@ -259,6 +259,38 @@
                 </div>
               </div>
             </div>
+            <div
+              v-if="selectedSong"
+              class="flex justify-center"
+            >
+              <div
+                v-if="!songImageError && songImageUrl"
+                class="w-[300px] h-[300px] rounded border border-slate-200 overflow-hidden bg-slate-50"
+              >
+                <img
+                  :src="songImageUrl"
+                  class="w-full h-full object-cover"
+                  width="300"
+                  height="300"
+                  alt="Song artwork"
+                  @error="handleSongImageError"
+                />
+              </div>
+              <div
+                v-else
+                class="w-[300px] h-[300px] rounded border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-500 bg-slate-50 text-center text-sm px-4 gap-3"
+              >
+                <span>Image unavailable</span>
+                <button
+                  v-if="isAuthenticated"
+                  type="button"
+                  class="px-3 py-2 text-sm font-medium text-white bg-slate-800 rounded hover:bg-slate-700 transition-colors"
+                  @click="triggerSongImageUpload"
+                >
+                  Upload image
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </Transition>
@@ -296,11 +328,18 @@
       @close="showEditSong = false"
       @song-updated="handleSongUpdated"
     />
+    <input
+      ref="songImageUpload"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      @change="handleSongImageUpload"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
 import { collectionsApi } from '../services/api.js'
 import AddSongModal from './AddSongModal.vue'
@@ -341,6 +380,17 @@ const showImageModal = ref(false)
 const showEditCollection = ref(false)
 const showEditSong = ref(false)
 const songToEdit = ref(null)
+const songImageError = ref(false)
+const imageRefreshKey = ref(0)
+const songImageUpload = ref(null)
+
+const songImageUrl = computed(() => {
+  if (!props.collectionId || !selectedSong.value?.id) {
+    return ''
+  }
+  const baseUrl = `/api/collections/${props.collectionId}/songs/${selectedSong.value.id}/image`
+  return imageRefreshKey.value ? `${baseUrl}?t=${imageRefreshKey.value}` : baseUrl
+})
 
 function handleImageError(event) {
   event.target.style.display = 'none'
@@ -464,6 +514,54 @@ function editSong(song) {
   showEditSong.value = true
 }
 
+function handleSongImageError() {
+  songImageError.value = true
+}
+
+function triggerSongImageUpload() {
+  if (!selectedSong.value) return
+  songImageUpload.value?.click()
+}
+
+async function handleSongImageUpload(event) {
+  const file = event.target.files?.[0]
+  if (!file || !selectedSong.value) {
+    event.target.value = ''
+    return
+  }
+
+  if (!file.type.startsWith('image/')) {
+    alert('Please select an image file')
+    event.target.value = ''
+    return
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    alert('File size must be less than 10MB')
+    event.target.value = ''
+    return
+  }
+
+  try {
+    const formData = new FormData()
+    formData.append('image', file)
+
+    await collectionsApi.uploadSongImage(
+      props.collectionId,
+      selectedSong.value.id,
+      formData,
+      getAuthHeaders()
+    )
+
+    songImageError.value = false
+    imageRefreshKey.value = Date.now()
+  } catch (err) {
+    alert(err.message)
+  } finally {
+    event.target.value = ''
+  }
+}
+
 async function showLyrics(song) {
   // If clicking the same song, toggle the panel
   if (selectedSong.value?.id === song.id && showLyricsPanel.value) {
@@ -506,6 +604,8 @@ function closeLyricsPanel() {
   newLyrics.value = ''
   showEditLyricsForm.value = false
   editLyrics.value = ''
+  songImageError.value = false
+  imageRefreshKey.value = 0
 }
 
 function cancelAddLyrics() {
@@ -587,6 +687,16 @@ watch([() => props.collectionId, () => props.collection], () => {
   
   fetchCollection()
 }, { immediate: true })
+
+watch(() => selectedSong.value?.id, (newId) => {
+  if (newId) {
+    songImageError.value = false
+    imageRefreshKey.value = Date.now()
+  } else {
+    songImageError.value = false
+    imageRefreshKey.value = 0
+  }
+})
 </script>
 
 <style scoped>

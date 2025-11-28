@@ -176,7 +176,10 @@ export const collectionsApi = {
     api.post(`/collections/${collectionId}/songs/${songId}/lyrics`, { lyrics }, authHeaders ? { headers: authHeaders } : {}),
   
   updateLyrics: (collectionId, songId, lyrics, authHeaders) => 
-    api.patch(`/collections/${collectionId}/songs/${songId}/lyrics`, { lyrics }, authHeaders ? { headers: authHeaders } : {})
+    api.patch(`/collections/${collectionId}/songs/${songId}/lyrics`, { lyrics }, authHeaders ? { headers: authHeaders } : {}),
+  
+  uploadSongImage: (collectionId, songId, formData, authHeaders) =>
+    api.post(`/collections/${collectionId}/songs/${songId}/image`, formData, authHeaders ? { headers: authHeaders } : {})
 }
 
 // Auth API endpoints
