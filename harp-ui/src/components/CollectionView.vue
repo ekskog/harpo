@@ -105,10 +105,27 @@
             class="flex items-center justify-between p-3 rounded transition-colors"
             :class="selectedSong?.id === song.id ? 'bg-slate-100' : 'hover:bg-slate-50'"
           >
-            <div class="flex items-center flex-1">
-              <span class="text-slate-500 font-mono text-sm mr-4 min-w-[2rem]">
+            <div class="flex items-center flex-1 gap-3">
+              <span class="text-slate-500 font-mono text-sm min-w-[2rem]">
                 {{ song.track_order || '—' }}
               </span>
+              <button
+                type="button"
+                class="w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-400 transition-colors"
+                title="View song image"
+                @click.stop="openSongImageModal(song)"
+              >
+                <img
+                  v-if="!songImageErrors[song.id]"
+                  :src="getSongImageUrl(song)"
+                  class="w-4 h-4 object-cover rounded-full"
+                  alt="Song thumbnail"
+                  @error="handleSongThumbnailError(song.id)"
+                />
+                <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M15 10h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </button>
               <button
                 @click="showLyrics(song)"
                 class="text-slate-800 font-medium hover:text-slate-600 text-left cursor-pointer"
@@ -259,38 +276,6 @@
                 </div>
               </div>
             </div>
-            <div
-              v-if="selectedSong"
-              class="flex justify-center"
-            >
-              <div
-                v-if="!songImageError && songImageUrl"
-                class="w-[300px] h-[300px] rounded border border-slate-200 overflow-hidden bg-slate-50"
-              >
-                <img
-                  :src="songImageUrl"
-                  class="w-full h-full object-cover"
-                  width="300"
-                  height="300"
-                  alt="Song artwork"
-                  @error="handleSongImageError"
-                />
-              </div>
-              <div
-                v-else
-                class="w-[300px] h-[300px] rounded border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-500 bg-slate-50 text-center text-sm px-4 gap-3"
-              >
-                <span>Image unavailable</span>
-                <button
-                  v-if="isAuthenticated"
-                  type="button"
-                  class="px-3 py-2 text-sm font-medium text-white bg-slate-800 rounded hover:bg-slate-700 transition-colors"
-                  @click="triggerSongImageUpload"
-                >
-                  Upload image
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </Transition>
@@ -328,6 +313,51 @@
       @close="showEditSong = false"
       @song-updated="handleSongUpdated"
     />
+    <Transition name="modal">
+      <div
+        v-if="showSongImageModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75"
+        @click="closeSongImageModal"
+      >
+        <div class="relative w-[520px] max-w-full p-4" @click.stop>
+          <button
+            @click="closeSongImageModal"
+            class="absolute top-2 left-2 z-10 text-white hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-2 transition-colors"
+            title="Close"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div class="w-[500px] h-[500px] bg-white rounded-lg flex items-center justify-center overflow-hidden">
+            <img
+              v-if="!modalSongImageError"
+              :src="modalSongImageUrl"
+              class="w-[500px] h-[500px] object-contain"
+              :alt="modalSong?.title || 'Song image'"
+              @error="modalSongImageError = true"
+            />
+            <div
+              v-else
+              class="flex flex-col items-center justify-center text-center text-white px-6 gap-4"
+            >
+              <p class="text-lg font-semibold">Image unavailable</p>
+              <p class="text-sm text-slate-200">
+                No artwork found for this song. You can upload one if you have permission.
+              </p>
+              <button
+                v-if="isAuthenticated && modalSong"
+                type="button"
+                class="px-4 py-2 bg-white text-slate-900 rounded font-medium hover:bg-slate-100 transition-colors"
+                @click.stop="triggerSongImageUpload(modalSong)"
+              >
+                Upload image
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
     <input
       ref="songImageUpload"
       type="file"
@@ -380,17 +410,29 @@ const showImageModal = ref(false)
 const showEditCollection = ref(false)
 const showEditSong = ref(false)
 const songToEdit = ref(null)
-const songImageError = ref(false)
-const imageRefreshKey = ref(0)
 const songImageUpload = ref(null)
+const songImageErrors = ref({})
+const songImageVersions = ref({})
+const showSongImageModal = ref(false)
+const modalSong = ref(null)
+const modalSongImageError = ref(false)
+const imageUploadSongId = ref(null)
 
-const songImageUrl = computed(() => {
-  if (!props.collectionId || !selectedSong.value?.id) {
+const modalSongImageUrl = computed(() => {
+  if (!modalSong.value) {
     return ''
   }
-  const baseUrl = `/api/collections/${props.collectionId}/songs/${selectedSong.value.id}/image`
-  return imageRefreshKey.value ? `${baseUrl}?t=${imageRefreshKey.value}` : baseUrl
+  return getSongImageUrl(modalSong.value)
 })
+
+function getSongImageUrl(song) {
+  if (!song || !props.collectionId) {
+    return ''
+  }
+  const baseUrl = `/api/collections/${props.collectionId}/songs/${song.id}/image`
+  const version = songImageVersions.value[song.id]
+  return version ? `${baseUrl}?t=${version}` : baseUrl
+}
 
 function handleImageError(event) {
   event.target.style.display = 'none'
@@ -514,18 +556,38 @@ function editSong(song) {
   showEditSong.value = true
 }
 
-function handleSongImageError() {
-  songImageError.value = true
+function handleSongThumbnailError(songId) {
+  songImageErrors.value = {
+    ...songImageErrors.value,
+    [songId]: true
+  }
 }
 
-function triggerSongImageUpload() {
-  if (!selectedSong.value) return
+function openSongImageModal(song) {
+  modalSong.value = song
+  modalSongImageError.value = false
+  showSongImageModal.value = true
+}
+
+function closeSongImageModal() {
+  showSongImageModal.value = false
+  modalSong.value = null
+  modalSongImageError.value = false
+}
+
+function triggerSongImageUpload(song) {
+  const targetSong = song || selectedSong.value
+  if (!targetSong) return
+
+  imageUploadSongId.value = targetSong.id
   songImageUpload.value?.click()
 }
 
 async function handleSongImageUpload(event) {
   const file = event.target.files?.[0]
-  if (!file || !selectedSong.value) {
+  const songId = imageUploadSongId.value
+
+  if (!file || !songId) {
     event.target.value = ''
     return
   }
@@ -533,12 +595,14 @@ async function handleSongImageUpload(event) {
   if (!file.type.startsWith('image/')) {
     alert('Please select an image file')
     event.target.value = ''
+    imageUploadSongId.value = null
     return
   }
 
   if (file.size > 10 * 1024 * 1024) {
     alert('File size must be less than 10MB')
     event.target.value = ''
+    imageUploadSongId.value = null
     return
   }
 
@@ -548,17 +612,28 @@ async function handleSongImageUpload(event) {
 
     await collectionsApi.uploadSongImage(
       props.collectionId,
-      selectedSong.value.id,
+      songId,
       formData,
       getAuthHeaders()
     )
 
-    songImageError.value = false
-    imageRefreshKey.value = Date.now()
+    songImageVersions.value = {
+      ...songImageVersions.value,
+      [songId]: Date.now()
+    }
+    songImageErrors.value = {
+      ...songImageErrors.value,
+      [songId]: false
+    }
+
+    if (modalSong.value?.id === songId) {
+      modalSongImageError.value = false
+    }
   } catch (err) {
     alert(err.message)
   } finally {
     event.target.value = ''
+    imageUploadSongId.value = null
   }
 }
 
@@ -604,8 +679,6 @@ function closeLyricsPanel() {
   newLyrics.value = ''
   showEditLyricsForm.value = false
   editLyrics.value = ''
-  songImageError.value = false
-  imageRefreshKey.value = 0
 }
 
 function cancelAddLyrics() {
@@ -688,15 +761,6 @@ watch([() => props.collectionId, () => props.collection], () => {
   fetchCollection()
 }, { immediate: true })
 
-watch(() => selectedSong.value?.id, (newId) => {
-  if (newId) {
-    songImageError.value = false
-    imageRefreshKey.value = Date.now()
-  } else {
-    songImageError.value = false
-    imageRefreshKey.value = 0
-  }
-})
 </script>
 
 <style scoped>
