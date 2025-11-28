@@ -51,6 +51,22 @@
             />
           </div>
 
+          <div>
+            <label for="bandcamp_url" class="block text-sm font-medium text-slate-700 mb-1">
+              Bandcamp URL (optional)
+            </label>
+            <input
+              id="bandcamp_url"
+              v-model="form.bandcamp_url"
+              type="url"
+              class="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+              placeholder="https://artist.bandcamp.com/album/collection-name"
+            />
+            <p class="text-xs text-slate-500 mt-1">
+              Link to the collection on Bandcamp
+            </p>
+          </div>
+
           <div v-if="error" class="text-red-600 text-sm">
             {{ error }}
           </div>
@@ -100,7 +116,8 @@ const { getAuthHeaders } = useAuth()
 const form = ref({
   name: '',
   source: '',
-  description: ''
+  description: '',
+  bandcamp_url: ''
 })
 const loading = ref(false)
 const error = ref('')
@@ -111,7 +128,8 @@ watch(() => props.collection, (newCollection) => {
     form.value = {
       name: newCollection.name || '',
       source: newCollection.source || '',
-      description: newCollection.description || ''
+      description: newCollection.description || '',
+      bandcamp_url: newCollection.bandcamp_url || ''
     }
   }
 }, { immediate: true })

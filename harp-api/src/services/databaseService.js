@@ -149,6 +149,10 @@ class DatabaseService {
         fields.push('source = ?');
         values.push(updates.source);
       }
+      if (updates.bandcamp_url !== undefined) {
+        fields.push('bandcamp_url = ?');
+        values.push(updates.bandcamp_url);
+      }
       
       if (fields.length === 0) {
         throw new Error('No fields to update');

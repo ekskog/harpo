@@ -431,7 +431,7 @@ router.patch('/:id', authenticateToken, async (req, res) => {
   console.log('[PATCH /collections/:id] Body:', req.body);
   try {
     const collectionId = parseInt(req.params.id);
-    const { name, description, source } = req.body;
+    const { name, description, source, bandcamp_url } = req.body;
 
     if (isNaN(collectionId)) {
       return res.status(400).json({
@@ -443,11 +443,11 @@ router.patch('/:id', authenticateToken, async (req, res) => {
     }
 
     // Check if at least one field is provided
-    if (name === undefined && description === undefined && source === undefined) {
+    if (name === undefined && description === undefined && source === undefined && bandcamp_url === undefined) {
       return res.status(400).json({
         success: false,
         error: 'No fields to update',
-        message: 'At least one field (name, description, or source) must be provided',
+        message: 'At least one field (name, description, source, or bandcamp_url) must be provided',
         timestamp: new Date().toISOString()
       });
     }
@@ -472,10 +472,21 @@ router.patch('/:id', authenticateToken, async (req, res) => {
       });
     }
 
+    // Validate bandcamp_url if provided (allow empty string to clear it)
+    if (bandcamp_url !== undefined && typeof bandcamp_url !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid bandcamp_url',
+        message: 'Bandcamp URL must be a string',
+        timestamp: new Date().toISOString()
+      });
+    }
+
     const updates = {};
     if (name !== undefined) updates.name = name.trim();
     if (description !== undefined) updates.description = description;
     if (source !== undefined) updates.source = source.trim();
+    if (bandcamp_url !== undefined) updates.bandcamp_url = bandcamp_url.trim() || null;
 
     const updatedCollection = await databaseService.updateCollection(collectionId, updates);
 
