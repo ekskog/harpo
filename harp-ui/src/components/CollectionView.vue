@@ -10,30 +10,68 @@
       <!-- Collection Details -->
       <div class="bg-white rounded-lg shadow-md p-6">
         <div class="flex items-start justify-between mb-2">
-          <h2 class="text-2xl font-bold text-slate-800 flex items-center">
-            {{ collection.name }}
-            <a v-if="collection.bandcamp_url" :href="collection.bandcamp_url" target="_blank" class="ml-2" title="Available on Bandcamp">
-              <svg class="w-6 h-6 text-blue-300 hover:text-blue-500" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                <path d="M354.27,407.291H0.5l157.231-302.582H511.5L354.27,407.291z"/>
+          <div class="flex items-center">
+            <img 
+              v-if="collection.id"
+              :src="`/api/collections/${collection.id}/cover`" 
+              class="w-16 h-16 mr-4 rounded object-cover cursor-pointer hover:opacity-80 transition-opacity"
+              @error="handleImageError"
+              @click="openImageModal"
+              alt="Collection cover"
+            />
+            <div>
+              <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                {{ collection.name }}
+                <a v-if="collection.bandcamp_url" :href="collection.bandcamp_url" target="_blank" class="ml-2" title="Available on Bandcamp">
+                  <svg class="w-6 h-6 text-blue-300 hover:text-blue-500" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M354.27,407.291H0.5l157.231-302.582H511.5L354.27,407.291z"/>
+                  </svg>
+                </a>
+              </h2>
+              <p v-if="collection.description" class="text-slate-600 mt-1">
+                {{ collection.description }}
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button
+              v-if="isAuthenticated"
+              @click="showEditCollection = true"
+              class="p-2 text-slate-600 hover:bg-slate-200 rounded-md transition-colors"
+              title="Edit Collection"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
-            </a>
-          </h2>
-          <button
-            @click="$emit('close')"
-            class="text-slate-400 hover:text-slate-600 p-1 -mt-1"
-            title="Close collection"
-          >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+            </button>
+            <button
+              v-if="isAuthenticated"
+              @click="$refs.coverUpload.click()"
+              class="p-2 text-slate-600 hover:bg-slate-200 rounded-md transition-colors"
+              title="Upload Cover Image"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </button>
+            <input
+              ref="coverUpload"
+              type="file"
+              accept="image/*"
+              @change="handleCoverUpload"
+              class="hidden"
+            />
+            <button
+              @click="$emit('close')"
+              class="text-slate-400 hover:text-slate-600 p-1 -mt-1 hover:bg-slate-200 rounded transition-colors"
+              title="Close collection"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
-        <p v-if="collection.description" class="text-slate-600 mb-4">
-          {{ collection.description }}
-        </p>
-        <p class="text-sm text-slate-500">
-          Created: {{ formatDate(collection.created_at) }}
-        </p>
       </div>
 
       <!-- Songs List -->
@@ -48,9 +86,12 @@
           <button
             v-if="isAuthenticated"
             @click="showAddSong = true"
-            class="px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
+            class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
+            title="Add Song"
           >
-            + Add Song
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
           </button>
         </div>
         <div v-if="collection.songs.length === 0" class="text-gray-500 italic">
@@ -75,16 +116,28 @@
                 {{ song.title }}
               </button>
             </div>
-            <button
-              v-if="isAuthenticated"
-              @click.stop="deleteSong(song.id)"
-              class="text-red-600 hover:text-red-800 p-1 ml-2"
-              title="Delete song"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
+            <div class="flex items-center space-x-1">
+              <button
+                v-if="isAuthenticated"
+                @click.stop="editSong(song)"
+                class="text-slate-600 hover:bg-slate-200 p-1 rounded transition-colors"
+                title="Edit song"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button
+                v-if="isAuthenticated"
+                @click.stop="deleteSong(song.id)"
+                class="text-red-600 hover:bg-red-50 p-1 ml-2 rounded transition-colors"
+                title="Delete song"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
           </li>
         </ol>
       </div>
@@ -100,7 +153,7 @@
             </div>
             <button
               @click="closeLyricsPanel"
-              class="text-slate-500 hover:text-slate-700 p-2"
+              class="text-slate-500 hover:text-slate-700 p-2 hover:bg-slate-200 rounded transition-colors"
               title="Close"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,8 +167,48 @@
                 Loading lyrics...
               </div>
             </div>
-            <div v-else-if="lyrics" class="prose max-w-none">
+            <div v-else-if="lyrics && !showEditLyricsForm" class="prose max-w-none">
+              <div class="flex justify-end mb-4">
+                <button
+                  v-if="isAuthenticated"
+                  @click="startEditLyrics"
+                  class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
+                  title="Edit Lyrics"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+              </div>
               <pre class="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">{{ lyrics }}</pre>
+            </div>
+            <div v-else-if="showEditLyricsForm" class="max-w-2xl mx-auto text-left">
+              <textarea
+                v-model="editLyrics"
+                placeholder="Enter lyrics here..."
+                class="w-full h-64 p-4 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 font-sans"
+              />
+              <div class="flex gap-2 mt-4 justify-end">
+                <button
+                  @click="cancelEditLyrics"
+                  class="p-2 text-slate-700 hover:bg-slate-200 rounded-md transition-colors"
+                  title="Cancel"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <button
+                  @click="submitEditLyrics"
+                  :disabled="!editLyrics.trim() || savingLyrics"
+                  class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Save Changes"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
+              </div>
             </div>
             <div v-else class="text-center py-12">
               <p v-if="lyricsError" class="text-red-600 mb-4">
@@ -128,9 +221,12 @@
               <div v-if="isAuthenticated && !showAddLyricsForm">
                 <button
                   @click="showAddLyricsForm = true"
-                  class="px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700"
+                  class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
+                  title="Add Lyrics"
                 >
-                  Add Lyrics
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
                 </button>
               </div>
               
@@ -143,16 +239,22 @@
                 <div class="flex gap-2 mt-4 justify-end">
                   <button
                     @click="cancelAddLyrics"
-                    class="px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50"
+                    class="p-2 text-slate-700 hover:bg-slate-200 rounded-md transition-colors"
+                    title="Cancel"
                   >
-                    Cancel
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
                   <button
                     @click="submitLyrics"
                     :disabled="!newLyrics.trim() || savingLyrics"
-                    class="px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Save Lyrics"
                   >
-                    {{ savingLyrics ? 'Saving...' : 'Save Lyrics' }}
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -169,6 +271,31 @@
       @close="showAddSong = false"
       @song-added="handleSongAdded"
     />
+
+    <!-- Image Modal -->
+    <ImageModal
+      :show="showImageModal"
+      :image-src="collection.id ? `/api/collections/${collection.id}/cover` : ''"
+      alt="Collection cover"
+      @close="showImageModal = false"
+    />
+
+    <!-- Edit Collection Modal -->
+    <EditCollectionModal
+      :show="showEditCollection"
+      :collection="collection"
+      @close="showEditCollection = false"
+      @collection-updated="handleCollectionUpdated"
+    />
+
+    <!-- Edit Song Modal -->
+    <EditSongModal
+      :show="showEditSong"
+      :collection-id="collectionId"
+      :song="songToEdit"
+      @close="showEditSong = false"
+      @song-updated="handleSongUpdated"
+    />
   </div>
 </template>
 
@@ -177,6 +304,9 @@ import { ref, watch } from 'vue'
 import { useAuth } from '../composables/useAuth.js'
 import { collectionsApi } from '../services/api.js'
 import AddSongModal from './AddSongModal.vue'
+import EditCollectionModal from './EditCollectionModal.vue'
+import EditSongModal from './EditSongModal.vue'
+import ImageModal from './ImageModal.vue'
 
 const props = defineProps({
   collectionId: {
@@ -205,15 +335,60 @@ const lyricsError = ref('')
 const showAddLyricsForm = ref(false)
 const newLyrics = ref('')
 const savingLyrics = ref(false)
+const showEditLyricsForm = ref(false)
+const editLyrics = ref('')
+const showImageModal = ref(false)
+const showEditCollection = ref(false)
+const showEditSong = ref(false)
+const songToEdit = ref(null)
 
-function formatDate(dateString) {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+function handleImageError(event) {
+  event.target.style.display = 'none'
+}
+
+function openImageModal() {
+  showImageModal.value = true
+}
+
+async function handleCoverUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    alert('Please select an image file')
+    return
+  }
+
+  // Validate file size (10MB limit)
+  if (file.size > 10 * 1024 * 1024) {
+    alert('File size must be less than 10MB')
+    return
+  }
+
+  try {
+    const formData = new FormData()
+    formData.append('cover', file)
+
+    const result = await collectionsApi.uploadCover(props.collectionId, formData, getAuthHeaders())
+
+    if (result.success) {
+      alert('Cover image uploaded successfully!')
+      // Force refresh of the cover image by adding a timestamp
+      // This will trigger a re-render and show the new image
+      const img = document.querySelector(`img[alt="Collection cover"]`)
+      if (img) {
+        img.src = `/api/collections/${props.collection.id}/cover?t=${Date.now()}`
+      }
+    } else {
+      alert(result.message || 'Failed to upload cover image')
+    }
+  } catch (error) {
+    alert('Error uploading cover image: ' + error.message)
+  } finally {
+    // Clear the file input
+    event.target.value = ''
+  }
 }
 
 async function fetchCollection() {
@@ -262,6 +437,33 @@ function handleSongAdded(newSong) {
   collection.value.songs.push(newSong)
 }
 
+function handleCollectionUpdated(updatedCollection) {
+  // Update the collection data
+  collection.value = {
+    ...collection.value,
+    ...updatedCollection
+  }
+  // Emit to parent to refresh collections list
+  emit('refresh-collections')
+}
+
+function handleSongUpdated(updatedSong) {
+  // Update the song in the local collection
+  const index = collection.value.songs.findIndex(song => song.id === updatedSong.id)
+  if (index !== -1) {
+    collection.value.songs[index] = updatedSong
+  }
+  // Update selected song if it's the one being edited
+  if (selectedSong.value?.id === updatedSong.id) {
+    selectedSong.value = updatedSong
+  }
+}
+
+function editSong(song) {
+  songToEdit.value = song
+  showEditSong.value = true
+}
+
 async function showLyrics(song) {
   // If clicking the same song, toggle the panel
   if (selectedSong.value?.id === song.id && showLyricsPanel.value) {
@@ -302,11 +504,23 @@ function closeLyricsPanel() {
   lyricsError.value = ''
   showAddLyricsForm.value = false
   newLyrics.value = ''
+  showEditLyricsForm.value = false
+  editLyrics.value = ''
 }
 
 function cancelAddLyrics() {
   showAddLyricsForm.value = false
   newLyrics.value = ''
+}
+
+function startEditLyrics() {
+  showEditLyricsForm.value = true
+  editLyrics.value = lyrics.value
+}
+
+function cancelEditLyrics() {
+  showEditLyricsForm.value = false
+  editLyrics.value = ''
 }
 
 async function submitLyrics() {
@@ -332,8 +546,45 @@ async function submitLyrics() {
   }
 }
 
+async function submitEditLyrics() {
+  if (!editLyrics.value.trim() || !selectedSong.value || !props.collectionId) return
+
+  savingLyrics.value = true
+
+  try {
+    await collectionsApi.updateLyrics(
+      props.collectionId,
+      selectedSong.value.id,
+      editLyrics.value,
+      getAuthHeaders()
+    )
+    
+    lyrics.value = editLyrics.value
+    showEditLyricsForm.value = false
+    editLyrics.value = ''
+  } catch (err) {
+    alert(err.message)
+  } finally {
+    savingLyrics.value = false
+  }
+}
+
 // Watch for changes to collectionId and collection props
 watch([() => props.collectionId, () => props.collection], () => {
+  // Reset lyrics panel state when collection changes
+  showLyricsPanel.value = false
+  selectedSong.value = null
+  lyrics.value = ''
+  lyricsError.value = ''
+  showAddLyricsForm.value = false
+  newLyrics.value = ''
+  showEditLyricsForm.value = false
+  editLyrics.value = ''
+  savingLyrics.value = false
+  showEditCollection.value = false
+  showEditSong.value = false
+  songToEdit.value = null
+  
   fetchCollection()
 }, { immediate: true })
 </script>

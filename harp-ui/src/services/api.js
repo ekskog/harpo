@@ -19,27 +19,31 @@ class ApiService {
   }
 
   /**
-   * Make a POST request
+   * Make a POST request (supports both JSON and FormData)
    */
   async post(endpoint, data, options = {}) {
     console.log('[ApiService.post] Endpoint:', endpoint)
-    console.log('[ApiService.post] Data:', data)
     console.log('[ApiService.post] Data type:', typeof data)
-    console.log('[ApiService.post] Stringified body:', JSON.stringify(data))
     
     const { headers = {}, ...restOptions } = options
-    const bodyString = JSON.stringify(data)
     
-    console.log('[ApiService.post] Final body string:', bodyString)
+    // Check if data is FormData
+    const isFormData = data instanceof FormData
+    
+    if (!isFormData) {
+      console.log('[ApiService.post] Data:', data)
+      console.log('[ApiService.post] Stringified body:', JSON.stringify(data))
+    }
     
     return this.request(endpoint, {
       method: 'POST',
       ...restOptions,
       headers: {
-        'Content-Type': 'application/json',
+        // Don't set Content-Type for FormData, let browser set it with boundary
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
         ...headers
       },
-      body: bodyString
+      body: isFormData ? data : JSON.stringify(data)
     })
   }
 
@@ -50,6 +54,22 @@ class ApiService {
     const { headers = {}, ...restOptions } = options
     return this.request(endpoint, {
       method: 'PUT',
+      ...restOptions,
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      body: JSON.stringify(data)
+    })
+  }
+
+  /**
+   * Make a PATCH request
+   */
+  async patch(endpoint, data, options = {}) {
+    const { headers = {}, ...restOptions } = options
+    return this.request(endpoint, {
+      method: 'PATCH',
       ...restOptions,
       headers: {
         'Content-Type': 'application/json',
@@ -132,10 +152,19 @@ export const collectionsApi = {
   create: (collectionData, authHeaders) =>
     api.post('/collections', collectionData, authHeaders ? { headers: authHeaders } : {}),
   
+  update: (id, collectionData, authHeaders) =>
+    api.patch(`/collections/${id}`, collectionData, authHeaders ? { headers: authHeaders } : {}),
+  
+  uploadCover: (id, formData, authHeaders) =>
+    api.post(`/collections/${id}/cover`, formData, authHeaders ? { headers: authHeaders } : {}),
+  
   getSongs: (collectionId) => api.get(`/collections/${collectionId}/songs`),
   
   createSong: (collectionId, songData, authHeaders) => 
     api.post(`/collections/${collectionId}/songs`, songData, authHeaders ? { headers: authHeaders } : {}),
+  
+  updateSong: (collectionId, songId, songData, authHeaders) => 
+    api.patch(`/collections/${collectionId}/songs/${songId}`, songData, authHeaders ? { headers: authHeaders } : {}),
   
   deleteSong: (collectionId, songId, authHeaders) => 
     api.delete(`/collections/${collectionId}/songs/${songId}`, authHeaders ? { headers: authHeaders } : {}),
@@ -144,7 +173,10 @@ export const collectionsApi = {
     api.get(`/collections/${collectionId}/songs/${songId}/lyrics`),
   
   saveLyrics: (collectionId, songId, lyrics, authHeaders) => 
-    api.post(`/collections/${collectionId}/songs/${songId}/lyrics`, { lyrics }, authHeaders ? { headers: authHeaders } : {})
+    api.post(`/collections/${collectionId}/songs/${songId}/lyrics`, { lyrics }, authHeaders ? { headers: authHeaders } : {}),
+  
+  updateLyrics: (collectionId, songId, lyrics, authHeaders) => 
+    api.patch(`/collections/${collectionId}/songs/${songId}/lyrics`, { lyrics }, authHeaders ? { headers: authHeaders } : {})
 }
 
 // Auth API endpoints
