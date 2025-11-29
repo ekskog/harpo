@@ -184,7 +184,7 @@
                 Loading lyrics...
               </div>
             </div>
-            <div v-else-if="lyrics && !showEditLyricsForm" class="flex gap-6">
+            <div v-else-if="lyrics && !showEditLyricsForm" class="flex items-start gap-6">
               <div
                 v-if="selectedSong"
                 class="flex-shrink-0"
