@@ -14,7 +14,7 @@
             <img 
               v-if="collection.id"
               :src="`/api/collections/${collection.id}/cover`" 
-              class="w-16 h-16 mr-4 rounded object-cover cursor-pointer hover:opacity-80 transition-opacity"
+              class="w-16 h-16 mr-4 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
               @error="handleImageError"
               @click="openImageModal"
               alt="Collection cover"
