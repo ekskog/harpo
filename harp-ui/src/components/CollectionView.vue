@@ -184,20 +184,47 @@
                 Loading lyrics...
               </div>
             </div>
-            <div v-else-if="lyrics && !showEditLyricsForm" class="prose max-w-none">
-              <div class="flex justify-end mb-4">
+            <div v-else-if="lyrics && !showEditLyricsForm" class="flex gap-6">
+              <div
+                v-if="selectedSong"
+                class="flex-shrink-0"
+              >
                 <button
-                  v-if="isAuthenticated"
-                  @click="startEditLyrics"
-                  class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
-                  title="Edit Lyrics"
+                  type="button"
+                  class="block w-[150px] h-[150px] rounded-full overflow-hidden border border-slate-200 bg-slate-50 hover:border-slate-400 transition-colors"
+                  title="View song image"
+                  @click="openSongImageModal(selectedSong)"
                 >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
+                  <img
+                    v-if="!songImageErrors[selectedSong.id]"
+                    :src="getSongImageUrl(selectedSong)"
+                    class="w-full h-full object-cover"
+                    alt="Song artwork"
+                    @error="handleSongThumbnailError(selectedSong.id)"
+                  />
+                  <div
+                    v-else
+                    class="w-full h-full flex items-center justify-center text-slate-400 text-xs text-center px-3"
+                  >
+                    No image
+                  </div>
                 </button>
               </div>
-              <pre class="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">{{ lyrics }}</pre>
+              <div class="prose max-w-none flex-1">
+                <div class="flex justify-end mb-4">
+                  <button
+                    v-if="isAuthenticated"
+                    @click="startEditLyrics"
+                    class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
+                    title="Edit Lyrics"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                </div>
+                <pre class="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">{{ lyrics }}</pre>
+              </div>
             </div>
             <div v-else-if="showEditLyricsForm" class="max-w-2xl mx-auto text-left">
               <textarea
