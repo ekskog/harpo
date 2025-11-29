@@ -184,10 +184,22 @@
                 Loading lyrics...
               </div>
             </div>
-            <div v-else-if="lyrics && !showEditLyricsForm" class="flex items-start gap-6">
+            <div v-else-if="lyrics && !showEditLyricsForm" class="relative">
+              <div class="flex justify-end mb-4">
+                <button
+                  v-if="isAuthenticated"
+                  @click="startEditLyrics"
+                  class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
+                  title="Edit Lyrics"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+              </div>
               <div
                 v-if="selectedSong"
-                class="flex-shrink-0"
+                class="float-left mr-6 mb-4"
               >
                 <button
                   type="button"
@@ -210,21 +222,7 @@
                   </div>
                 </button>
               </div>
-              <div class="prose max-w-none flex-1">
-                <div class="flex justify-end mb-4">
-                  <button
-                    v-if="isAuthenticated"
-                    @click="startEditLyrics"
-                    class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
-                    title="Edit Lyrics"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                </div>
-                <pre class="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">{{ lyrics }}</pre>
-              </div>
+              <pre class="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">{{ lyrics }}</pre>
             </div>
             <div v-else-if="showEditLyricsForm" class="max-w-2xl mx-auto text-left">
               <textarea
