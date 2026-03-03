@@ -5,7 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'harp-api/**'
-      - '.github/workflows/build-and-push-api.yml'
+      - '.github/workflows/api-build.yml'
   pull_request:
     branches: [ main ]
     paths:
