@@ -1,4 +1,4 @@
-name: Build and publish harp-ui image
+name: Build and publish harp-fe image
 
 on:
   push:
@@ -6,10 +6,6 @@ on:
     paths:
       - 'harp-ui/**'
       - '.github/workflows/ui-build.yml'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'harp-ui/**'
   workflow_dispatch:
     inputs:
       deploy:
@@ -22,12 +18,12 @@ on:
           - 'false'
 
 concurrency:
-  group: build-and-push-harp-ui
+  group: build-and-push-harp-fe
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Build and push harp-ui image
+    name: Build and push harp-fe image
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -37,8 +33,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -53,32 +47,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Restore node_modules cache
-        uses: actions/cache@v4
-        with:
-          path: harp-ui/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('harp-ui/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Cache npm registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('harp-ui/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-
-      - name: Install and verify Node dependencies
-        working-directory: ./harp-ui
-        run: |
-          npm ci --prefer-offline --no-audit --no-fund
-
-      - name: Build UI assets
-        working-directory: ./harp-ui
-        run: |
-          npm run build
-
+      # Removed GHA Docker Cache to ensure a 100% clean build of the new image name
       - name: Build and push UI (multi-arch)
         uses: docker/build-push-action@v4
         with:
@@ -87,29 +56,23 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/harp-ui:latest
-            ghcr.io/${{ github.repository_owner }}/harp-ui:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ghcr.io/${{ github.repository_owner }}/harp-fe:latest
+            ghcr.io/${{ github.repository_owner }}/harp-fe:${{ github.sha }}
 
   deploy:
-    name: Deploy to Kubernetes (optional)
+    name: Deploy to Kubernetes
     needs: build
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true' }}
+    # Ensuring this runs if you push to main OR dispatch
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true')
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-
       - name: Configure kubeconfig
         run: |
           echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
 
-      - name: Set image and rollout
+      - name: Update Deployment Image
         run: |
-          kubectl -n harp set image deployment/harp-ui harp-ui=ghcr.io/${{ github.repository_owner }}/harp-ui:latest
+          # We change the image source in the deployment to the new 'harp-fe' name
+          kubectl -n harp set image deployment/harp-ui harp-ui=ghcr.io/${{ github.repository_owner }}/harp-fe:latest
+          kubectl -n harp rollout restart deployment/harp-ui
           kubectl -n harp rollout status deployment/harp-ui --timeout=120s
-

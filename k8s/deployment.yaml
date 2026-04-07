@@ -76,7 +76,7 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: harp-ui
-          image: ghcr.io/ekskog/harp-ui:latest
+          image: ghcr.io/ekskog/harp-fe:latest
           imagePullPolicy: Always
           env:
             - name: BACKEND_URL
