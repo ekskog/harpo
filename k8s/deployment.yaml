@@ -78,6 +78,9 @@ spec:
         - name: harp-ui
           image: ghcr.io/ekskog/harp-ui:latest
           imagePullPolicy: Always
+          env:
+            - name: BACKEND_URL
+              value: "http://harp-api.harp.svc.cluster.local:80"
           ports:
             - containerPort: 3000
           resources:
