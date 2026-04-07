@@ -1,106 +1,55 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: harp-api
-  namespace: harp
-  labels:
-    app: harp-api
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: harp-api
-  template:
-    metadata:
-      labels:
-        app: harp-api
-    spec:
-      imagePullSecrets:
-        - name: ghcr-pull-secret
-      containers:
-        - name: harp-api
-          image: ghcr.io/ekskog/harp-api:latest
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 3000
-          envFrom:
-            - secretRef:
-                name: harpo-secret
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
-          volumeMounts:
-            - name: harp
-              mountPath: /app/harp
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 3000
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 3000
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            failureThreshold: 3
-      volumes:
-        - name: harp
-          persistentVolumeClaim:
-            claimName: harp-nfspvc
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: harp-ui
-  namespace: harp
-  labels:
-    app: harp-ui
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: harp-ui
-  template:
-    metadata:
-      labels:
-        app: harp-ui
-    spec:
-      imagePullSecrets:
-        - name: ghcr-pull-secret
-      containers:
-        - name: harp-ui
-          image: ghcr.io/ekskog/harp-fe:latest
-          imagePullPolicy: Always
-          env:
-            - name: BACKEND_URL
-              value: "http://harp-api.harp.svc.cluster.local:80"
-          ports:
-            - containerPort: 3000
-          resources:
-            requests:
-              cpu: "50m"
-              memory: "64Mi"
-            limits:
-              cpu: "200m"
-              memory: "256Mi"
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 3000
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 3000
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            failureThreshold: 3
+name: Build and publish harp-fe image
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'harp-ui/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and push harp-fe image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push UI
+        uses: docker/build-push-action@v4
+        with:
+          context: ./harp-ui
+          file: ./harp-ui/Dockerfile
+          # ONLY amd64 - no more QEMU/Illegal Instruction errors
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/harp-fe:latest
+            ghcr.io/${{ github.repository_owner }}/harp-fe:${{ github.sha }}
+
+  deploy:
+    name: Deploy to Kubernetes
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure kubeconfig
+        run: |
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
+
+      - name: Update Deployment Image
+        run: |
+          # Point the deployment to the NEW image name
+          kubectl -n harp set image deployment/harp-ui harp-ui=ghcr.io/${{ github.repository_owner }}/harp-fe:latest
+          kubectl -n harp rollout restart deployment/harp-ui
