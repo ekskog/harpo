@@ -21,7 +21,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: github-actions
-  namespace: harp
+  namespace: webapps
 EOF
 
 # Create role binding with limited permissions (only deployment operations)
@@ -30,7 +30,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: github-actions-deploy
-  namespace: harp
+  namespace: webapps
 rules:
 - apiGroups: ["apps"]
   resources: ["deployments", "replicasets"]
@@ -48,7 +48,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: github-actions-deploy-binding
-  namespace: harp
+  namespace: webapps
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -56,7 +56,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: github-actions
-  namespace: harp
+  namespace: webapps
 EOF
 
 # Create a secret for the service account (required for older k8s versions)
@@ -65,7 +65,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: github-actions-token
-  namespace: harp
+  namespace: webapps
   annotations:
     kubernetes.io/service-account.name: github-actions
 type: kubernetes.io/service-account-token

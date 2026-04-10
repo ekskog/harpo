@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: harp-api
-  namespace: harp
+  namespace: webapps
   labels:
     app: harp-api
 spec:
@@ -19,7 +19,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: harpo-ui
-  namespace: harp
+  namespace: webapps
   labels:
     app: harpo-ui
 spec:

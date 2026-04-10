@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: harp-api
-  namespace: harp
+  namespace: webapps
   labels:
     app: harp-api
 spec:
@@ -53,7 +53,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: harpo-ui
-  namespace: harp
+  namespace: webapps
   labels:
     app: harpo-ui
 spec:
