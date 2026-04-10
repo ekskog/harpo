@@ -49,3 +49,11 @@ jobs:
             ghcr.io/ekskog/harp-api:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Deploy to k8s
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          kubectl rollout restart deployment/harp-api -n webapps
+          kubectl rollout status deployment/harp-api -n webapps --timeout=120s
