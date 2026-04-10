@@ -15,8 +15,6 @@ spec:
       labels:
         app: harp-api
     spec:
-      imagePullSecrets:
-        - name: ghcr-pull-secret
       containers:
         - name: harp-api
           image: ghcr.io/ekskog/harp-api:latest
@@ -66,8 +64,6 @@ spec:
       labels:
         app: harpo-ui
     spec:
-      imagePullSecrets:
-        - name: ghcr-pull-secret
       containers:
         - name: backend
           image: ghcr.io/ekskog/harpo-ui:latest
