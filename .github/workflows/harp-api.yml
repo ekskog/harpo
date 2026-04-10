@@ -55,5 +55,5 @@ jobs:
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
-          kubectl rollout restart deployment/harp-api -n webapps
+          kubectl set image deployment/harp-api harp-api=ghcr.io/ekskog/harp-api:${{ github.sha }} -n webapps
           kubectl rollout status deployment/harp-api -n webapps --timeout=120s
