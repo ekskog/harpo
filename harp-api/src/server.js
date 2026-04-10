@@ -34,15 +34,18 @@ app.use((req, res, next) => {
 });
 
 // Register routes
-app.use('/health', healthRoutes);
-app.use('/collections', collectionsRoutes);
-app.use('/auth', authRoutes);
+// API prefix for versioning
+const API_PREFIX = '/api/v1';
+
+app.use(`${API_PREFIX}/health`, healthRoutes);
+app.use(`${API_PREFIX}/collections`, collectionsRoutes);
+app.use(`${API_PREFIX}/auth`, authRoutes);
 
 const PORT = process.env.PORT || 3000;
 
 const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log(`Health check available at http://localhost:${PORT}/health`);
+  console.log(`Health check available at http://localhost:${PORT}${API_PREFIX}/health`);
 });
 
 // Graceful shutdown

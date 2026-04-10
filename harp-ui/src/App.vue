@@ -113,7 +113,7 @@ const selectedCollectionData = computed(() => {
 
 async function fetchCollections() {
   try {
-    const response = await fetch("/api/collections");
+    const response = await fetch("/api/v1/collections");
     const contentType = response.headers.get("content-type") || "";
     if (response.ok && contentType.includes("application/json")) {
       const result = await response.json();
@@ -150,7 +150,7 @@ async function deleteSelectedCollection() {
   deletingCollection.value = true;
   try {
     const response = await fetch(
-      `/api/collections/${selectedCollection.value}`,
+      `/api/v1/collections/${selectedCollection.value}`,
       {
         method: "DELETE",
         headers: getAuthHeaders(),

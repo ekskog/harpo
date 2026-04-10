@@ -13,7 +13,7 @@
           <div class="flex items-center">
             <img 
               v-if="collection.id"
-              :src="`/api/collections/${collection.id}/cover`" 
+              :src="`/api/v1/collections/${collection.id}/cover`" 
               class="w-16 h-16 mr-4 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
               @error="handleImageError"
               @click="openImageModal"
@@ -317,7 +317,7 @@
     <!-- Image Modal -->
     <ImageModal
       :show="showImageModal"
-      :image-src="collection.id ? `/api/collections/${collection.id}/cover` : ''"
+      :image-src="collection.id ? `/api/v1/collections/${collection.id}/cover` : ''"
       alt="Collection cover"
       @close="showImageModal = false"
     />
@@ -454,7 +454,7 @@ function getSongImageUrl(song) {
   if (!song || !props.collectionId) {
     return ''
   }
-  const baseUrl = `/api/collections/${props.collectionId}/songs/${song.id}/image`
+  const baseUrl = `/api/v1/collections/${props.collectionId}/songs/${song.id}/image`
   const version = songImageVersions.value[song.id]
   return version ? `${baseUrl}?t=${version}` : baseUrl
 }
@@ -495,7 +495,7 @@ async function handleCoverUpload(event) {
       // This will trigger a re-render and show the new image
       const img = document.querySelector(`img[alt="Collection cover"]`)
       if (img) {
-        img.src = `/api/collections/${props.collection.id}/cover?t=${Date.now()}`
+        img.src = `/api/v1/collections/${props.collection.id}/cover?t=${Date.now()}`
       }
     } else {
       alert(result.message || 'Failed to upload cover image')

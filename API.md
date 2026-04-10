@@ -7,17 +7,19 @@ This document describes all available API endpoints for the Harp application.
 - **Production**: `https://harp-api.ekskog.net`
 - **Local Development**: `http://localhost:3000`
 
+All API endpoints are versioned and available under the `/api/v1` prefix. For example, the health endpoint is `GET /api/v1/health`.
+
 ---
 
 ## Quick Start Example
 
 Here's a complete example workflow using curl commands:
 
-### 1. User logs in
+# 1. User logs in
 
 ```bash
 # Login and save the authentication token
-TOKEN=$(curl -s -X POST https://harp-api.ekskog.net/auth/login \
+TOKEN=$(curl -s -X POST https://harp-api.ekskog.net/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "lucarv",
@@ -27,11 +29,11 @@ TOKEN=$(curl -s -X POST https://harp-api.ekskog.net/auth/login \
 echo "Token: $TOKEN"
 ```
 
-### 2. Creates collection "My Col", with description "dummy desc" and source "mycol"
+# 2. Creates collection "My Col", with description "dummy desc" and source "mycol"
 
 ```bash
 # Create collection and save the collection ID
-COLLECTION_ID=$(curl -s -X POST https://harp-api.ekskog.net/collections \
+COLLECTION_ID=$(curl -s -X POST https://harp-api.ekskog.net/api/v1/collections \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -43,11 +45,11 @@ COLLECTION_ID=$(curl -s -X POST https://harp-api.ekskog.net/collections \
 echo "Collection ID: $COLLECTION_ID"
 ```
 
-### 3. Adds song "first song" with track number 1
+# 3. Adds song "first song" with track number 1
 
 ```bash
 # Add song to the collection and save the song ID
-SONG_ID=$(curl -s -X POST https://harp-api.ekskog.net/collections/$COLLECTION_ID/songs \
+SONG_ID=$(curl -s -X POST https://harp-api.ekskog.net/api/v1/collections/$COLLECTION_ID/songs \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -62,7 +64,7 @@ echo "Song ID: $SONG_ID"
 
 ```bash
 # Save lyrics for the song
-curl -X POST https://harp-api.ekskog.net/collections/$COLLECTION_ID/songs/$SONG_ID/lyrics \
+curl -X POST https://harp-api.ekskog.net/api/v1/collections/$COLLECTION_ID/songs/$SONG_ID/lyrics \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -122,7 +124,7 @@ Create a new user account.
 
 **cURL Example**:
 ```bash
-curl -X POST https://harp-api.ekskog.net/auth/register \
+curl -X POST https://harp-api.ekskog.net/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "john_doe",
@@ -166,7 +168,7 @@ Authenticate and receive a JWT token.
 
 **cURL Example**:
 ```bash
-curl -X POST https://harp-api.ekskog.net/auth/login \
+curl -X POST https://harp-api.ekskog.net/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "lucarv",
@@ -176,7 +178,7 @@ curl -X POST https://harp-api.ekskog.net/auth/login \
 
 **Save token for later use**:
 ```bash
-TOKEN=$(curl -s -X POST https://harp-api.ekskog.net/auth/login \
+TOKEN=$(curl -s -X POST https://harp-api.ekskog.net/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"john_doe","password":"securepassword123"}' \
   | jq -r '.data.token')
@@ -211,7 +213,7 @@ Check if a JWT token is valid.
 
 **cURL Example**:
 ```bash
-curl -X GET https://harp-api.ekskog.net/auth/verify \
+curl -X GET https://harp-api.ekskog.net/api/v1/auth/verify \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -241,7 +243,7 @@ Check API and database health.
 
 **cURL Example**:
 ```bash
-curl -X GET https://harp-api.ekskog.net/health
+curl -X GET https://harp-api.ekskog.net/api/v1/health
 ```
 
 ---
@@ -276,7 +278,7 @@ Retrieve a list of all collections.
 
 **cURL Example**:
 ```bash
-curl -X GET https://harp-api.ekskog.net/collections
+curl -X GET https://harp-api.ekskog.net/api/v1/collections
 ```
 
 ---
@@ -316,7 +318,7 @@ Create a new collection.
 
 **cURL Example**:
 ```bash
-curl -X POST https://harp-api.ekskog.net/collections \
+curl -X POST https://harp-api.ekskog.net/api/v1/collections \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -350,7 +352,7 @@ Delete a collection and all its songs.
 
 **cURL Example**:
 ```bash
-curl -X DELETE https://harp-api.ekskog.net/collections/1 \
+curl -X DELETE https://harp-api.ekskog.net/api/v1/collections/1 \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -391,7 +393,7 @@ Retrieve all songs in a specific collection.
 
 **cURL Example**:
 ```bash
-curl -X GET https://harp-api.ekskog.net/collections/1/songs
+curl -X GET https://harp-api.ekskog.net/api/v1/collections/1/songs
 ```
 
 ---
@@ -433,7 +435,7 @@ Add a new song to a collection.
 
 **cURL Example**:
 ```bash
-curl -X POST https://harp-api.ekskog.net/collections/1/songs \
+curl -X POST https://harp-api.ekskog.net/api/v1/collections/1/songs \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -467,7 +469,7 @@ Delete a song from a collection.
 
 **cURL Example**:
 ```bash
-curl -X DELETE https://harp-api.ekskog.net/collections/1/songs/1 \
+curl -X DELETE https://harp-api.ekskog.net/api/v1/collections/1/songs/1 \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -504,7 +506,7 @@ Retrieve lyrics for a specific song.
 
 **cURL Example**:
 ```bash
-curl -X GET https://harp-api.ekskog.net/collections/1/songs/1/lyrics
+curl -X GET https://harp-api.ekskog.net/api/v1/collections/1/songs/1/lyrics
 ```
 
 ---
@@ -547,7 +549,7 @@ Save or update lyrics for a song.
 
 **cURL Example**:
 ```bash
-curl -X POST https://harp-api.ekskog.net/collections/1/songs/1/lyrics \
+curl -X POST https://harp-api.ekskog.net/api/v1/collections/1/songs/1/lyrics \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -557,7 +559,7 @@ curl -X POST https://harp-api.ekskog.net/collections/1/songs/1/lyrics \
 
 **cURL Example with file**:
 ```bash
-curl -X POST https://harp-api.ekskog.net/collections/1/songs/1/lyrics \
+curl -X POST https://harp-api.ekskog.net/api/v1/collections/1/songs/1/lyrics \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d @- <<EOF
@@ -621,13 +623,13 @@ Here's a complete example workflow:
 
 ```bash
 # 1. Login and save token
-TOKEN=$(curl -s -X POST https://harp-api.ekskog.net/auth/login \
+TOKEN=$(curl -s -X POST https://harp-api.ekskog.net/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"lucarv","password":"lucaPWD$ha4p"}' \
   | jq -r '.data.token')
 
 # 2. Create a collection
-COLLECTION_ID=$(curl -s -X POST https://harp-api.ekskog.net/collections \
+COLLECTION_ID=$(curl -s -X POST https://harp-api.ekskog.net/api/v1/collections \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -639,7 +641,7 @@ COLLECTION_ID=$(curl -s -X POST https://harp-api.ekskog.net/collections \
 echo "Created collection ID: $COLLECTION_ID"
 
 # 3. Add a song to the collection
-SONG_ID=$(curl -s -X POST https://harp-api.ekskog.net/collections/$COLLECTION_ID/songs \
+SONG_ID=$(curl -s -X POST https://harp-api.ekskog.net/api/v1/collections/$COLLECTION_ID/songs \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -650,7 +652,7 @@ SONG_ID=$(curl -s -X POST https://harp-api.ekskog.net/collections/$COLLECTION_ID
 echo "Created song ID: $SONG_ID"
 
 # 4. Save lyrics for the song
-curl -X POST https://harp-api.ekskog.net/collections/$COLLECTION_ID/songs/$SONG_ID/lyrics \
+curl -X POST https://harp-api.ekskog.net/api/v1/collections/$COLLECTION_ID/songs/$SONG_ID/lyrics \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{

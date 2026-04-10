@@ -1,7 +1,7 @@
 // API service for making HTTP requests
 // This handles all API calls with consistent error handling
 
-const API_BASE = '/api'
+const API_BASE = '/api/v1'
 
 class ApiService {
   constructor(baseUrl = API_BASE) {
