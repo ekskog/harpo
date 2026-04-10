@@ -2,7 +2,9 @@
 
 ## Project Purpose
 
-Harpo is a full-stack web application for managing personal music collections and song lyrics. Users can create collections, add songs with metadata (title, track order), manage lyrics, and upload cover art/song images. The application has user authentication and is deployed on Kubernetes (k3s).
+Harpo is a personal catalog app for a songwriter. The core model is simple: a **collection** is a group of songs (think album, EP, or any thematic grouping), and each **song** belongs to one collection with a title and track order. Beyond the basics, collections can have cover art and a Bandcamp URL, songs can have lyrics and artwork, and everything is behind authentication so only the owner can make changes.
+
+The app is a full-stack web application: a Vue 3 SPA for the UI and a Node.js/Express API backed by MariaDB, deployed on Kubernetes (k3s).
 
 ---
 

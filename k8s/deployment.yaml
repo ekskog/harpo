@@ -15,6 +15,10 @@ spec:
       labels:
         app: harp-api
     spec:
+      volumes:
+        - name: harp-nfs
+          persistentVolumeClaim:
+            claimName: harp-nfs-pvc
       containers:
         - name: harp-api
           image: ghcr.io/ekskog/harp-api:latest
@@ -24,6 +28,9 @@ spec:
           envFrom:
             - secretRef:
                 name: harpo-secret
+          volumeMounts:
+            - name: harp-nfs
+              mountPath: /app/nfs
           resources:
             requests:
               cpu: "100m"

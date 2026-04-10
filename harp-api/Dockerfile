@@ -32,18 +32,15 @@ FROM node:22-bookworm-slim AS production
 RUN apt-get update && apt-get install -y --no-install-recommends dumb-init \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a dedicated system user
-RUN groupadd -g 1001 nodejs && \
-    useradd -m -u 1001 -g nodejs harpo
-
+# Use nobody (uid 65534) to match NFS all_squash anonuid
 WORKDIR /app
 
 # Copy only the pruned node_modules and necessary source files
-COPY --from=build --chown=harpo:nodejs /app/node_modules ./node_modules
-COPY --from=build --chown=harpo:nodejs /app/src ./src
-COPY --from=build --chown=harpo:nodejs /app/package.json ./package.json
+COPY --from=build --chown=nobody:nogroup /app/node_modules ./node_modules
+COPY --from=build --chown=nobody:nogroup /app/src ./src
+COPY --from=build --chown=nobody:nogroup /app/package.json ./package.json
 
-USER harpo
+USER nobody
 
 EXPOSE 3000
 

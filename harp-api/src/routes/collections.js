@@ -1,59 +1,224 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
 const databaseService = require('../services/databaseService');
 
+const NFS_ROOT = '/app/nfs';
+
+// ---------------------------------------------------------------------------
+// Helper: find the image file for a given directory (any extension)
+// ---------------------------------------------------------------------------
+function findImageFile(dir, baseName) {
+  if (!fs.existsSync(dir)) return null;
+  const files = fs.readdirSync(dir).filter(f => f.startsWith(baseName + '.'));
+  return files.length ? path.join(dir, files[0]) : null;
+}
+
+// ---------------------------------------------------------------------------
+// Collections
+// ---------------------------------------------------------------------------
+
+// GET /collections
 router.get('/', async (req, res) => {
   try {
     const collections = await databaseService.getAllCollections();
-
-    res.status(200).json({
-      success: true,
-      data: collections,
-      count: collections.length,
-      timestamp: new Date().toISOString()
-    });
+    res.status(200).json({ success: true, data: collections, count: collections.length });
   } catch (error) {
-    console.error('Error fetching collections:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch collections',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
+    res.status(500).json({ success: false, error: 'Failed to fetch collections', message: error.message });
   }
 });
 
+// POST /collections
+router.post('/', async (req, res) => {
+  try {
+    const { name, description, source, bandcamp_url } = req.body;
+    if (!name || !source) {
+      return res.status(400).json({ success: false, error: 'Validation Error', message: 'Name and Source are required.' });
+    }
+    const newCollection = await databaseService.createCollection({
+      name, description: description || null, source, bandcamp_url: bandcamp_url || null
+    });
+    res.status(201).json({ success: true, data: newCollection });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Database Error', message: error.message });
+  }
+});
+
+// PATCH /collections/:id
+router.patch('/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid ID' });
+
+    const { name, description, source, bandcamp_url } = req.body;
+    const updated = await databaseService.updateCollection(id, { name, description, source, bandcamp_url });
+    if (!updated) return res.status(404).json({ success: false, error: 'Collection not found' });
+
+    res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to update collection', message: error.message });
+  }
+});
+
+// DELETE /collections/:id
+router.delete('/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid ID' });
+
+    await databaseService.deleteCollection(id);
+    res.status(200).json({ success: true, message: 'Collection deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to delete collection', message: error.message });
+  }
+});
+
+// GET /collections/:id/cover
+router.get('/:id/cover', async (req, res) => {
+  try {
+    const collection = await databaseService.getCollectionById(parseInt(req.params.id));
+    if (!collection) return res.status(404).json({ success: false, error: 'Collection not found' });
+    const file = findImageFile(path.join(NFS_ROOT, collection.source), 'cover');
+    if (!file) return res.status(404).json({ success: false, error: 'No cover image' });
+    res.sendFile(file);
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch cover', message: error.message });
+  }
+});
+
+// POST /collections/:id/cover — disabled until NFS writes are enabled
+router.post('/:id/cover', (req, res) => {
+  res.status(501).json({ success: false, error: 'Not implemented', message: 'Cover upload is not enabled' });
+});
+
+// ---------------------------------------------------------------------------
+// Songs
+// ---------------------------------------------------------------------------
+
+// GET /collections/:id/songs
 router.get('/:id/songs', async (req, res) => {
   try {
     const collectionId = parseInt(req.params.id);
-
-    if (isNaN(collectionId)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid collection ID',
-        message: 'Collection ID must be a number',
-        timestamp: new Date().toISOString()
-      });
-    }
+    if (isNaN(collectionId)) return res.status(400).json({ success: false, error: 'Invalid ID' });
 
     const songs = await databaseService.getSongsByCollectionId(collectionId);
-
-    res.status(200).json({
-      success: true,
-      data: songs,
-      count: songs.length,
-      collection_id: collectionId,
-      timestamp: new Date().toISOString()
-    });
+    res.status(200).json({ success: true, data: songs, count: songs.length, collection_id: collectionId });
   } catch (error) {
-    console.error('Error fetching songs for collection:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch songs for collection',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
+});
+
+// POST /collections/:id/songs
+router.post('/:id/songs', async (req, res) => {
+  try {
+    const collectionId = parseInt(req.params.id);
+    const title = req.body.title;
+    // accept both camelCase (frontend) and snake_case
+    const track_order = req.body.track_order ?? req.body.trackOrder ?? null;
+
+    if (isNaN(collectionId) || !title) {
+      return res.status(400).json({ success: false, message: 'Collection ID and Song Title are required.' });
+    }
+
+    const newSong = await databaseService.addSong({ collection_id: collectionId, title, track_order });
+    res.status(201).json({ success: true, data: newSong });
+  } catch (error) {
+    if (error.errno === 1452) {
+      return res.status(404).json({ success: false, error: 'Not Found', message: `Collection ${req.params.id} does not exist` });
+    }
+    res.status(500).json({ success: false, error: 'Failed to add song', message: error.message });
+  }
+});
+
+// PATCH /collections/:id/songs/:songId
+router.patch('/:id/songs/:songId', async (req, res) => {
+  try {
+    const collectionId = parseInt(req.params.id);
+    const songId = parseInt(req.params.songId);
+    if (isNaN(collectionId) || isNaN(songId)) return res.status(400).json({ success: false, error: 'Invalid ID' });
+
+    const { title, track_order, trackOrder } = req.body;
+    const updated = await databaseService.updateSong(songId, collectionId, {
+      title,
+      track_order: track_order ?? trackOrder ?? undefined
+    });
+    if (!updated) return res.status(404).json({ success: false, error: 'Song not found' });
+
+    res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to update song', message: error.message });
+  }
+});
+
+// DELETE /collections/:id/songs/:songId
+router.delete('/:id/songs/:songId', async (req, res) => {
+  try {
+    const collectionId = parseInt(req.params.id);
+    const songId = parseInt(req.params.songId);
+    if (isNaN(collectionId) || isNaN(songId)) return res.status(400).json({ success: false, error: 'Invalid ID' });
+
+    await databaseService.deleteSong(songId, collectionId);
+    res.status(200).json({ success: true, message: 'Song deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to delete song', message: error.message });
+  }
+});
+
+// GET /collections/:id/songs/:songId/image
+router.get('/:id/songs/:songId/image', async (req, res) => {
+  try {
+    const collection = await databaseService.getCollectionById(parseInt(req.params.id));
+    if (!collection) return res.status(404).json({ success: false, error: 'Collection not found' });
+    const song = await databaseService.getSongById(parseInt(req.params.songId));
+    if (!song) return res.status(404).json({ success: false, error: 'Song not found' });
+    // Song images stored as {track_order}_image.{ext} in the collection's NFS dir
+    const file = findImageFile(path.join(NFS_ROOT, collection.source), `${song.track_order}_image`);
+    if (!file) return res.status(404).json({ success: false, error: 'No image' });
+    res.sendFile(file);
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch image', message: error.message });
+  }
+});
+
+// POST /collections/:id/songs/:songId/image — disabled until NFS writes are enabled
+router.post('/:id/songs/:songId/image', (req, res) => {
+  res.status(501).json({ success: false, error: 'Not implemented', message: 'Song image upload is not enabled' });
+});
+
+// ---------------------------------------------------------------------------
+// Lyrics — stored as {track_order}.txt on NFS under {collection.source}/
+// ---------------------------------------------------------------------------
+
+async function getLyricsFile(collectionId, songId) {
+  const collection = await databaseService.getCollectionById(collectionId);
+  if (!collection) throw Object.assign(new Error('Collection not found'), { status: 404 });
+  const song = await databaseService.getSongById(songId);
+  if (!song) throw Object.assign(new Error('Song not found'), { status: 404 });
+  if (!song.track_order) throw Object.assign(new Error('Song has no track order — cannot derive lyrics filename'), { status: 422 });
+  return path.join(NFS_ROOT, collection.source, `${song.track_order}.txt`);
+}
+
+// GET /collections/:id/songs/:songId/lyrics
+router.get('/:id/songs/:songId/lyrics', async (req, res) => {
+  try {
+    const filePath = await getLyricsFile(parseInt(req.params.id), parseInt(req.params.songId));
+    if (!fs.existsSync(filePath)) return res.status(404).json({ success: false, error: 'No lyrics found' });
+    const lyrics = fs.readFileSync(filePath, 'utf8');
+    res.status(200).json({ success: true, data: { lyrics } });
+  } catch (error) {
+    res.status(error.status || 500).json({ success: false, error: 'Failed to fetch lyrics', message: error.message });
+  }
+});
+
+// POST /collections/:id/songs/:songId/lyrics — disabled until NFS writes are enabled
+router.post('/:id/songs/:songId/lyrics', (req, res) => {
+  res.status(501).json({ success: false, error: 'Not implemented', message: 'Lyrics write is not enabled' });
+});
+
+// PATCH /collections/:id/songs/:songId/lyrics — disabled until NFS writes are enabled
+router.patch('/:id/songs/:songId/lyrics', (req, res) => {
+  res.status(501).json({ success: false, error: 'Not implemented', message: 'Lyrics write is not enabled' });
 });
 
 module.exports = router;
