@@ -49,11 +49,10 @@ EXPOSE 3000
 
 # Health check using a simple node script to avoid installing curl/wget
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (res) => { \
+  CMD node -e "require('http').get('http://localhost:3000/api/v1/health', (res) => { \
     process.exit(res.statusCode === 200 ? 0 : 1) \
   }).on('error', () => process.exit(1))"
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
-# Run the node binary directly for better resource management
-CMD ["node", "src/index.js"]
+CMD ["node", "src/server.js"]
