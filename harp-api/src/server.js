@@ -10,7 +10,6 @@ const express = require('express');
 const cors = require('cors');
 const healthRoutes = require('./routes/health');
 const collectionsRoutes = require('./routes/collections');
-const authRoutes = require('./routes/auth');
 const databaseService = require('./services/databaseService');
 
 const app = express();
@@ -36,7 +35,6 @@ app.use((req, res, next) => {
 // Register routes
 app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/collections', collectionsRoutes);
-app.use('/api/v1/auth', authRoutes);
 
 const PORT = process.env.PORT || 3000;
 
