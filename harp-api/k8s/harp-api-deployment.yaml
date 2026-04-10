@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harp-api
+  namespace: webapps
+spec:
+  replicas: 1 # Keeping it simple for the home lab
+  selector:
+    matchLabels:
+      app: harp-api
+  template:
+    metadata:
+      labels:
+        app: harp-api
+    spec:
+      containers:
+      - name: harp-api
+        image: ghcr.io/ekskog/harp-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        # Health check to ensure K3s doesn't send traffic to a crashed pod
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 3000
+          initialDelaySeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000

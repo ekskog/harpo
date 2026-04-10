@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: harp-api-service
+  namespace: webapps
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 192.168.1.201 
+spec:
+  selector:
+    app: harp-api
+  ports:
+    - protocol: TCP
+      port: 80       # Port the LoadBalancer listens on
+      targetPort: 3000 # Port Express is listening on
+  type: LoadBalancer

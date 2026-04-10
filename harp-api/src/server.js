@@ -32,6 +32,7 @@ app.use((req, res, next) => {
   }
   next();
 });
+app.get('/healthz', (req, res) => res.json({ status: 'alive' }));
 
 // Register routes
 // API prefix for versioning
