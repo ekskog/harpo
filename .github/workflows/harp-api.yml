@@ -47,8 +47,8 @@ jobs:
           tags: |
             ghcr.io/ekskog/harp-api:latest
             ghcr.io/ekskog/harp-api:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=ghcr.io/ekskog/harp-api:latest
+          cache-to: type=inline
 
       - name: Deploy to k8s
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
