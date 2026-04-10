@@ -1,6 +1,6 @@
 {
   "dependencies": {
     "debug": "^4.4.3",
-    "multer": "^2.0.2"
+    "multer": "^2.1.1"
   }
 }
