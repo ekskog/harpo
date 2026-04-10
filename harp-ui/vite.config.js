@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'https://harp-api.ekskog.net',
         changeOrigin: true,
         secure: false,
         // Keep the /api prefix (including /api/v1) when proxying to the backend

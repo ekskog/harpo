@@ -14,8 +14,8 @@ const databaseService = require('./services/databaseService');
 const app = express();
 
 // Register routes
-app.use('/health', healthRoutes);
-app.use('/collections', collectionsRoutes);
+app.use('/api/v1/health', healthRoutes);
+app.use('/api/v1/collections', collectionsRoutes);
 
 const PORT = process.env.PORT || 3000;
 
