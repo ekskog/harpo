@@ -2,7 +2,7 @@
 // ==========================================
 // src/server.js
 // Entry point for the Harp API server
-// force rebuild (21/11 11:11  UTC)
+// force rebuild (11/04 07:26  UTC)
 // ==========================================
 
 require('dotenv').config();
@@ -29,6 +29,12 @@ app.use(express.json());
 // Log request body for debugging (after JSON parsing)
 // HTTP request/response debug middleware
 app.use((req, res, next) => {
+  // Suppress logs for Kubernetes health probes and the health endpoint
+  const ua = (req.headers['user-agent'] || '').toLowerCase();
+  const isKubeProbe = ua.includes('kube-probe');
+  const isHealthEndpoint = req.path === '/api/v1/health' || req.originalUrl.startsWith('/api/v1/health');
+  if (isKubeProbe || isHealthEndpoint) return next();
+
   const start = Date.now();
   httpDebug('Incoming %s %s', req.method, req.originalUrl);
   httpDebug('headers=%o', { host: req.headers.host, 'content-type': req.headers['content-type'] });
