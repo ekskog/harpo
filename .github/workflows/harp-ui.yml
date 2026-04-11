@@ -1,4 +1,4 @@
-Cname: Build and publish harpo-ui image
+name: Build and publish harpo-ui image
 
 on:
   push:
