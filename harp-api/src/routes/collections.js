@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const databaseService = require('../services/databaseService');
 const debug = require('debug')('harp:collections');
+const { requireAuth } = require('../middleware/auth');
 
 const NFS_ROOT = '/app/nfs';
 
@@ -79,7 +80,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /collections
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   const dbTimer = `db:createCollection:${Date.now()}`;
   console.time(dbTimer);
   try {
@@ -99,7 +100,7 @@ router.post('/', async (req, res) => {
 });
 
 // PATCH /collections/:id
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid ID' });
@@ -118,7 +119,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // DELETE /collections/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid ID' });
@@ -150,7 +151,7 @@ router.get('/:id/cover', async (req, res) => {
 });
 
 // POST /collections/:id/cover — disabled until NFS writes are enabled
-router.post('/:id/cover', (req, res) => {
+router.post('/:id/cover', requireAuth, (req, res) => {
   res.status(501).json({ success: false, error: 'Not implemented', message: 'Cover upload is not enabled' });
 });
 
@@ -175,7 +176,7 @@ router.get('/:id/songs', async (req, res) => {
 });
 
 // POST /collections/:id/songs
-router.post('/:id/songs', async (req, res) => {
+router.post('/:id/songs', requireAuth, async (req, res) => {
   try {
     const collectionId = parseInt(req.params.id);
     const title = req.body.title;
@@ -200,7 +201,7 @@ router.post('/:id/songs', async (req, res) => {
 });
 
 // PATCH /collections/:id/songs/:songId
-router.patch('/:id/songs/:songId', async (req, res) => {
+router.patch('/:id/songs/:songId', requireAuth, async (req, res) => {
   try {
     const collectionId = parseInt(req.params.id);
     const songId = parseInt(req.params.songId);
@@ -223,7 +224,7 @@ router.patch('/:id/songs/:songId', async (req, res) => {
 });
 
 // DELETE /collections/:id/songs/:songId
-router.delete('/:id/songs/:songId', async (req, res) => {
+router.delete('/:id/songs/:songId', requireAuth, async (req, res) => {
   try {
     const collectionId = parseInt(req.params.id);
     const songId = parseInt(req.params.songId);
@@ -259,7 +260,7 @@ router.get('/:id/songs/:songId/image', async (req, res) => {
 });
 
 // POST /collections/:id/songs/:songId/image — disabled until NFS writes are enabled
-router.post('/:id/songs/:songId/image', (req, res) => {
+router.post('/:id/songs/:songId/image', requireAuth, (req, res) => {
   res.status(501).json({ success: false, error: 'Not implemented', message: 'Song image upload is not enabled' });
 });
 
@@ -295,12 +296,12 @@ router.get('/:id/songs/:songId/lyrics', async (req, res) => {
 });
 
 // POST /collections/:id/songs/:songId/lyrics — disabled until NFS writes are enabled
-router.post('/:id/songs/:songId/lyrics', (req, res) => {
+router.post('/:id/songs/:songId/lyrics', requireAuth, (req, res) => {
   res.status(501).json({ success: false, error: 'Not implemented', message: 'Lyrics write is not enabled' });
 });
 
 // PATCH /collections/:id/songs/:songId/lyrics — disabled until NFS writes are enabled
-router.patch('/:id/songs/:songId/lyrics', (req, res) => {
+router.patch('/:id/songs/:songId/lyrics', requireAuth, (req, res) => {
   res.status(501).json({ success: false, error: 'Not implemented', message: 'Lyrics write is not enabled' });
 });
 

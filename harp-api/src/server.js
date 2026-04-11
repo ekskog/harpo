@@ -10,6 +10,7 @@ const express = require('express');
 const cors = require('cors');
 const healthRoutes = require('./routes/health');
 const collectionsRoutes = require('./routes/collections');
+const authRoutes = require('./routes/auth');
 const databaseService = require('./services/databaseService');
 const debug = require('debug')('harp:server');
 const httpDebug = require('debug')('harp:http');
@@ -56,6 +57,7 @@ app.use((req, res, next) => {
 
 // Register routes
 app.use('/api/v1/health', healthRoutes);
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/collections', collectionsRoutes);
 
 const PORT = process.env.PORT || 3000;
