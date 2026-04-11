@@ -311,7 +311,7 @@
     <!-- Image Modal -->
     <ImageModal
       :show="showImageModal"
-      :image-src="collection.id ? `/api/v1/collections/${collection.id}/cover` : ''"
+      :image-src="collection?.id ? `/api/v1/collections/${collection.id}/cover` : ''"
       alt="Collection cover"
       @close="showImageModal = false"
     />
@@ -489,7 +489,7 @@ async function handleCoverUpload(event) {
       // This will trigger a re-render and show the new image
       const img = document.querySelector(`img[alt="Collection cover"]`)
       if (img) {
-        img.src = `/api/v1/collections/${props.collection.id}/cover?t=${Date.now()}`
+        img.src = `/api/v1/collections/${props.collection?.id}/cover?t=${Date.now()}`
       }
     } else {
       alert(result.message || 'Failed to upload cover image')
@@ -758,7 +758,7 @@ async function submitEditLyrics() {
 }
 
 // Watch for changes to collectionId and collection props
-watch([() => props.collectionId, () => props.collection], () => {
+watch([() => props.collectionId], () => {
   // Reset lyrics panel state when collection changes
   showLyricsPanel.value = false
   selectedSong.value = null
