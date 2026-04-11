@@ -1,21 +1,20 @@
-FROM node:18-alpine AS build
+# --- Stage 1: Build ---
+FROM node:22-bookworm-slim AS build
+
 WORKDIR /app
 
-# install dependencies
 COPY package*.json ./
 RUN npm ci
 
-# copy source and build
 COPY . .
 RUN npm run build
 
-FROM nginx:stable-alpine
+# --- Stage 2: Serve ---
+FROM nginx:stable-alpine AS production
 
-# Copy built files
 COPY --from=build /app/dist /usr/share/nginx/html
-
-# Default nginx conf - can be overridden with a ConfigMap mount
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
+
 CMD ["nginx", "-g", "daemon off;"]
