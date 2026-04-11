@@ -1,0 +1,2 @@
+mcbbed46 added debug to API m0d5845f remove auth routes and use them later m0d55731 not the stale version of server.js m60e7d91 fixed wrong entry 
+point on Dockerfile mfa41c1a migrate the API m68e7a4a force rebuild to redeploy m90074ca nike ts moved api to js
