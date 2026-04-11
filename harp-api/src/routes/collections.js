@@ -29,11 +29,15 @@ function findImageFile(dir, baseName) {
 
 // GET /collections
 router.get('/', async (req, res) => {
+  const dbTimer = `db:getAllCollections:${Date.now()}`;
+  console.time(dbTimer);
   try {
     const collections = await databaseService.getAllCollections();
     res.status(200).json({ success: true, data: collections, count: collections.length });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to fetch collections', message: error.message });
+  } finally {
+    console.timeEnd(dbTimer);
   }
 });
 
@@ -76,6 +80,8 @@ router.get('/:id', async (req, res) => {
 
 // POST /collections
 router.post('/', async (req, res) => {
+  const dbTimer = `db:createCollection:${Date.now()}`;
+  console.time(dbTimer);
   try {
     const { name, description, source, bandcamp_url } = req.body;
     if (!name || !source) {
@@ -87,6 +93,8 @@ router.post('/', async (req, res) => {
     res.status(201).json({ success: true, data: newCollection });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Database Error', message: error.message });
+  } finally {
+    console.timeEnd(dbTimer);
   }
 });
 
@@ -97,10 +105,13 @@ router.patch('/:id', async (req, res) => {
     if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid ID' });
 
     const { name, description, source, bandcamp_url } = req.body;
+    const dbTimer = `db:updateCollection:${id}:${Date.now()}`;
+    console.time(dbTimer);
     const updated = await databaseService.updateCollection(id, { name, description, source, bandcamp_url });
     if (!updated) return res.status(404).json({ success: false, error: 'Collection not found' });
 
     res.status(200).json({ success: true, data: updated });
+    console.timeEnd(dbTimer);
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to update collection', message: error.message });
   }
@@ -112,8 +123,11 @@ router.delete('/:id', async (req, res) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid ID' });
 
+    const dbTimer = `db:deleteCollection:${id}:${Date.now()}`;
+    console.time(dbTimer);
     await databaseService.deleteCollection(id);
     res.status(200).json({ success: true, message: 'Collection deleted' });
+    console.timeEnd(dbTimer);
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to delete collection', message: error.message });
   }
@@ -124,7 +138,10 @@ router.get('/:id/cover', async (req, res) => {
   try {
     const collection = await databaseService.getCollectionById(parseInt(req.params.id));
     if (!collection) return res.status(404).json({ success: false, error: 'Collection not found' });
+    const fsTimer = `fs:findImageFile:cover:${Date.now()}`;
+    console.time(fsTimer);
     const file = findImageFile(path.join(NFS_ROOT, collection.source), 'cover');
+    console.timeEnd(fsTimer);
     if (!file) return res.status(404).json({ success: false, error: 'No cover image' });
     res.sendFile(file);
   } catch (error) {
@@ -147,7 +164,10 @@ router.get('/:id/songs', async (req, res) => {
     const collectionId = parseInt(req.params.id);
     if (isNaN(collectionId)) return res.status(400).json({ success: false, error: 'Invalid ID' });
 
+    const dbTimer = `db:getSongsByCollectionId:${collectionId}:${Date.now()}`;
+    console.time(dbTimer);
     const songs = await databaseService.getSongsByCollectionId(collectionId);
+    console.timeEnd(dbTimer);
     res.status(200).json({ success: true, data: songs, count: songs.length, collection_id: collectionId });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -166,7 +186,10 @@ router.post('/:id/songs', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Collection ID and Song Title are required.' });
     }
 
+    const dbTimer = `db:addSong:${collectionId}:${Date.now()}`;
+    console.time(dbTimer);
     const newSong = await databaseService.addSong({ collection_id: collectionId, title, track_order });
+    console.timeEnd(dbTimer);
     res.status(201).json({ success: true, data: newSong });
   } catch (error) {
     if (error.errno === 1452) {
@@ -184,10 +207,13 @@ router.patch('/:id/songs/:songId', async (req, res) => {
     if (isNaN(collectionId) || isNaN(songId)) return res.status(400).json({ success: false, error: 'Invalid ID' });
 
     const { title, track_order, trackOrder } = req.body;
+    const dbTimer = `db:updateSong:${songId}:${Date.now()}`;
+    console.time(dbTimer);
     const updated = await databaseService.updateSong(songId, collectionId, {
       title,
       track_order: track_order ?? trackOrder ?? undefined
     });
+    console.timeEnd(dbTimer);
     if (!updated) return res.status(404).json({ success: false, error: 'Song not found' });
 
     res.status(200).json({ success: true, data: updated });
@@ -203,7 +229,10 @@ router.delete('/:id/songs/:songId', async (req, res) => {
     const songId = parseInt(req.params.songId);
     if (isNaN(collectionId) || isNaN(songId)) return res.status(400).json({ success: false, error: 'Invalid ID' });
 
+    const dbTimer = `db:deleteSong:${songId}:${Date.now()}`;
+    console.time(dbTimer);
     await databaseService.deleteSong(songId, collectionId);
+    console.timeEnd(dbTimer);
     res.status(200).json({ success: true, message: 'Song deleted' });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to delete song', message: error.message });
@@ -218,7 +247,10 @@ router.get('/:id/songs/:songId/image', async (req, res) => {
     const song = await databaseService.getSongById(parseInt(req.params.songId));
     if (!song) return res.status(404).json({ success: false, error: 'Song not found' });
     // Song images stored as {track_order}_image.{ext} in the collection's NFS dir
+    const fsTimer = `fs:findImageFile:songImage:${Date.now()}`;
+    console.time(fsTimer);
     const file = findImageFile(path.join(NFS_ROOT, collection.source), `${song.track_order}_image`);
+    console.timeEnd(fsTimer);
     if (!file) return res.status(404).json({ success: false, error: 'No image' });
     res.sendFile(file);
   } catch (error) {
@@ -247,9 +279,15 @@ async function getLyricsFile(collectionId, songId) {
 // GET /collections/:id/songs/:songId/lyrics
 router.get('/:id/songs/:songId/lyrics', async (req, res) => {
   try {
+    const fsTimer = `fs:getLyrics:${Date.now()}`;
+    console.time(fsTimer);
     const filePath = await getLyricsFile(parseInt(req.params.id), parseInt(req.params.songId));
-    if (!fs.existsSync(filePath)) return res.status(404).json({ success: false, error: 'No lyrics found' });
+    if (!fs.existsSync(filePath)) {
+      console.timeEnd(fsTimer);
+      return res.status(404).json({ success: false, error: 'No lyrics found' });
+    }
     const lyrics = fs.readFileSync(filePath, 'utf8');
+    console.timeEnd(fsTimer);
     res.status(200).json({ success: true, data: { lyrics } });
   } catch (error) {
     res.status(error.status || 500).json({ success: false, error: 'Failed to fetch lyrics', message: error.message });

@@ -35,7 +35,10 @@ app.use((req, res, next) => {
   const isHealthEndpoint = req.path === '/api/v1/health' || req.originalUrl.startsWith('/api/v1/health');
   if (isKubeProbe || isHealthEndpoint) return next();
 
-  const start = Date.now();
+  // start a console timer for the whole request lifecycle
+  const reqTimer = `req:${req.method}:${req.originalUrl}:${Date.now()}`;
+  console.time(reqTimer);
+
   httpDebug('Incoming %s %s', req.method, req.originalUrl);
   httpDebug('headers=%o', { host: req.headers.host, 'content-type': req.headers['content-type'] });
   if (Object.keys(req.query || {}).length) httpDebug('query=%o', req.query);
@@ -43,8 +46,9 @@ app.use((req, res, next) => {
   if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') httpDebug('body=%o', req.body);
 
   res.on('finish', () => {
-    const ms = Date.now() - start;
+    const ms = Date.now() - (parseInt(reqTimer.split(':').pop(), 10) || Date.now());
     httpDebug('Completed %s %s -> %d (%dms)', req.method, req.originalUrl, res.statusCode, ms);
+    console.timeEnd(reqTimer);
   });
 
   next();
