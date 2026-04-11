@@ -66,11 +66,8 @@ router.get('/:id', async (req, res) => {
         message: 'Collection not found' 
       });
     }
-
-    res.status(200).json({ 
-      success: true, 
-      data: collection 
-    });
+    const songs = await databaseService.getSongsByCollectionId(id);
+    res.status(200).json({ success: true, data: { ...collection, songs } });
   } catch (error) {
     console.error('Error fetching collection by ID:', error);
     res.status(500).json({ 

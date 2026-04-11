@@ -503,18 +503,14 @@ async function handleCoverUpload(event) {
 }
 
 async function fetchCollection() {
-  if (!props.collectionId || !props.collection) return
+  if (!props.collectionId) return
 
   loading.value = true
   error.value = ''
 
   try {
-    const result = await collectionsApi.getSongs(props.collectionId)
-    // Combine collection info with songs
-    collection.value = {
-      ...props.collection,
-      songs: result.data || []
-    }
+    const result = await collectionsApi.getById(props.collectionId)
+    collection.value = result.data
   } catch (err) {
     error.value = err.message
   } finally {
