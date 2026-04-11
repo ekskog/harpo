@@ -3,8 +3,16 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const databaseService = require('../services/databaseService');
+const debug = require('debug')('harp:collections');
 
 const NFS_ROOT = '/app/nfs';
+
+// Router-level debug middleware: logs incoming request meta and body
+router.use((req, res, next) => {
+  debug(`[${req.method} ${req.originalUrl}] headers=%o`, { host: req.headers.host, 'content-type': req.headers['content-type'] });
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') debug('body=%o', req.body);
+  next();
+});
 
 // ---------------------------------------------------------------------------
 // Helper: find the image file for a given directory (any extension)
@@ -26,6 +34,43 @@ router.get('/', async (req, res) => {
     res.status(200).json({ success: true, data: collections, count: collections.length });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to fetch collections', message: error.message });
+  }
+});
+
+// GET /collections/:id
+router.get('/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid ID', 
+        message: 'Collection ID must be a number' 
+      });
+    }
+
+    const collection = await databaseService.getCollectionById(id);
+
+    if (!collection) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Not Found', 
+        message: 'Collection not found' 
+      });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      data: collection 
+    });
+  } catch (error) {
+    console.error('Error fetching collection by ID:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Database Error', 
+      message: error.message 
+    });
   }
 });
 

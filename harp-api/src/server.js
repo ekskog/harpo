@@ -11,6 +11,9 @@ const cors = require('cors');
 const healthRoutes = require('./routes/health');
 const collectionsRoutes = require('./routes/collections');
 const databaseService = require('./services/databaseService');
+const debug = require('debug')('harp:server');
+const httpDebug = require('debug')('harp:http');
+const errDebug = require('debug')('harp:error');
 
 const app = express();
 
@@ -24,11 +27,20 @@ app.use(cors({
 app.use(express.json());
 
 // Log request body for debugging (after JSON parsing)
+// HTTP request/response debug middleware
 app.use((req, res, next) => {
-  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
-    console.log(`[${req.method} ${req.path}] Raw body received:`, req.body);
-    console.log(`[${req.method} ${req.path}] Content-Type:`, req.headers['content-type']);
-  }
+  const start = Date.now();
+  httpDebug('Incoming %s %s', req.method, req.originalUrl);
+  httpDebug('headers=%o', { host: req.headers.host, 'content-type': req.headers['content-type'] });
+  if (Object.keys(req.query || {}).length) httpDebug('query=%o', req.query);
+  if (Object.keys(req.params || {}).length) httpDebug('params=%o', req.params);
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') httpDebug('body=%o', req.body);
+
+  res.on('finish', () => {
+    const ms = Date.now() - start;
+    httpDebug('Completed %s %s -> %d (%dms)', req.method, req.originalUrl, res.statusCode, ms);
+  });
+
   next();
 });
 
@@ -40,6 +52,7 @@ const PORT = process.env.PORT || 3000;
 
 const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  debug('Server is running on port %d', PORT);
 });
 
 // Graceful shutdown
@@ -61,3 +74,10 @@ const gracefulShutdown = async () => {
 
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
+
+// Generic express error handler (logs via debug)
+app.use((err, req, res, next) => {
+  errDebug('Unhandled error for %s %s: %O', req.method, req.originalUrl, err);
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).json({ success: false, error: 'Internal Server Error', message: err.message });
+});

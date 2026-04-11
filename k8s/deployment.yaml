@@ -28,6 +28,8 @@ spec:
           envFrom:
             - secretRef:
                 name: harpo-secret
+            - configMapRef:
+                name: harp-config      
           volumeMounts:
             - name: harp-nfs
               mountPath: /app/nfs

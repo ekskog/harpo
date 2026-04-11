@@ -14,7 +14,7 @@
             >
               The Harp of J.S.E.
             </label>
-            <div class="flex items-center space-x-2" v-if="isAuthenticated">
+            <div class="flex items-center space-x-2">
               <button
                 v-if="selectedCollection"
                 @click="deleteSelectedCollection"
