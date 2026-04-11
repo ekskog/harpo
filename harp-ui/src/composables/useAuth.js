@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-const API_BASE = '/api'; // This works both in dev and production
+const API_BASE = '/api/v1';
 const TOKEN_KEY = 'harp_auth_token';
 const USER_KEY = 'harp_user';
 
@@ -47,7 +47,7 @@ async function login(username, password) {
 
 async function register(username, password) {
   try {
-    const response = await fetch('/api/auth/register', {
+    const response = await fetch(`${API_BASE}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
