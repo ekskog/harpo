@@ -54,7 +54,10 @@ router.get('/:id', async (req, res) => {
       });
     }
 
+    const dbTimer = `db:getCollectionById:${id}:${Date.now()}`;
+    console.time(dbTimer);
     const collection = await databaseService.getCollectionById(id);
+    console.timeEnd(dbTimer);
 
     if (!collection) {
       return res.status(404).json({ 
