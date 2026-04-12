@@ -13,7 +13,7 @@
           <img
             v-if="collection.id"
             :src="`/api/v1/collections/${collection.id}/cover`"
-            class="w-14 h-14 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+            class="w-14 h-14 object-cover cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
             @error="handleImageError"
             @click="openImageModal"
             alt="Collection cover"
@@ -110,7 +110,7 @@
               </span>
               <button
                 type="button"
-                class="w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-400 transition-colors"
+                class="w-5 h-5 border border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-400 transition-colors"
                 title="View song image"
                 @click.stop="openSongImageModal(song)"
               >
@@ -192,7 +192,7 @@
               >
                 <button
                   type="button"
-                  class="block w-[150px] h-[150px] rounded-full overflow-hidden border border-slate-200 bg-slate-50 hover:border-slate-400 transition-colors"
+                  class="block w-[150px] h-[150px] overflow-hidden border border-slate-200 bg-slate-50 hover:border-slate-400 transition-colors"
                   title="View song image"
                   @click="openSongImageModal(selectedSong)"
                 >
@@ -336,7 +336,7 @@
         <div class="relative w-[520px] max-w-full p-4" @click.stop>
           <button
             @click="closeSongImageModal"
-            class="absolute top-2 left-2 z-10 text-white hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-2 transition-colors"
+            class="absolute top-2 left-2 z-10 text-white hover:text-gray-300 bg-black bg-opacity-50 p-2 transition-colors"
             title="Close"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -658,6 +658,8 @@ async function showLyrics(song) {
   showLyricsPanel.value = true
   lyrics.value = ''
   lyricsError.value = ''
+  // Clear cached image error so the image is retried when the panel opens
+  songImageErrors.value = { ...songImageErrors.value, [song.id]: false }
   await fetchLyrics()
 }
 
