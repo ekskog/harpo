@@ -174,44 +174,47 @@
                 Loading lyrics...
               </div>
             </div>
-            <div v-else-if="lyrics && !showEditLyricsForm" class="relative">
-              <div class="flex justify-end mb-4">
-                <button
-                  @click="startEditLyrics"
-                  class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
-                  title="Edit Lyrics"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </button>
-              </div>
-              <div
-                v-if="selectedSong"
-                class="float-left mr-6 mb-4"
-              >
-                <button
-                  type="button"
-                  class="block w-[150px] h-[150px] overflow-hidden border border-slate-200 bg-slate-50 hover:border-slate-400 transition-colors"
-                  title="View song image"
-                  @click="openSongImageModal(selectedSong)"
-                >
-                  <img
-                    v-if="!songImageErrors[selectedSong.id]"
-                    :src="getSongImageUrl(selectedSong)"
-                    class="w-full h-full object-cover"
-                    alt="Song artwork"
-                    @error="handleSongThumbnailError(selectedSong.id)"
-                  />
-                  <div
-                    v-else
-                    class="w-full h-full flex items-center justify-center text-slate-400 text-xs text-center px-3"
-                  >
-                    No image
+            <div v-else-if="lyrics && !showEditLyricsForm">
+              <div class="flex flex-col md:flex-row md:gap-6">
+                <!-- Lyrics column: first in DOM (top on mobile, right on md+) -->
+                <div class="flex-1 min-w-0 order-1 md:order-2">
+                  <div class="flex justify-end mb-4">
+                    <button
+                      @click="startEditLyrics"
+                      class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
+                      title="Edit Lyrics"
+                    >
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
                   </div>
-                </button>
+                  <pre class="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">{{ lyrics }}</pre>
+                </div>
+                <!-- Image: bottom on mobile, fixed sidebar on md+ -->
+                <div v-if="selectedSong" class="w-full md:w-48 md:flex-shrink-0 mt-6 md:mt-0 order-2 md:order-1">
+                  <button
+                    type="button"
+                    class="block w-full aspect-square overflow-hidden border border-slate-200 bg-slate-50 hover:border-slate-400 transition-colors"
+                    title="View song image"
+                    @click="openSongImageModal(selectedSong)"
+                  >
+                    <img
+                      v-if="!songImageErrors[selectedSong.id]"
+                      :src="getSongImageUrl(selectedSong)"
+                      class="w-full h-full object-cover"
+                      alt="Song artwork"
+                      @error="handleSongThumbnailError(selectedSong.id)"
+                    />
+                    <div
+                      v-else
+                      class="w-full h-full flex items-center justify-center text-slate-400 text-xs text-center px-3"
+                    >
+                      No image
+                    </div>
+                  </button>
+                </div>
               </div>
-              <pre class="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">{{ lyrics }}</pre>
             </div>
             <div v-else-if="showEditLyricsForm" class="max-w-2xl mx-auto text-left">
               <textarea
