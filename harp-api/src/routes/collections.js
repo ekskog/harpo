@@ -247,10 +247,10 @@ router.get('/:id/songs/:songId/image', async (req, res) => {
     if (!collection) return res.status(404).json({ success: false, error: 'Collection not found' });
     const song = await databaseService.getSongById(parseInt(req.params.songId));
     if (!song) return res.status(404).json({ success: false, error: 'Song not found' });
-    // Song images stored as {track_order}_image.{ext} in the collection's NFS dir
+    // Song images stored as {track_order}.{ext} in the collection's NFS dir
     const fsTimer = `fs:findImageFile:songImage:${Date.now()}`;
     console.time(fsTimer);
-    const file = findImageFile(path.join(NFS_ROOT, collection.source), `${song.track_order}_image`);
+    const file = findImageFile(path.join(NFS_ROOT, collection.source), `${song.track_order}`);
     console.log('Looking for song image in', path.join(NFS_ROOT, collection.source), `with base name ${song.track_order}_image`);
     console.timeEnd(fsTimer);
     if (!file) return res.status(404).json({ success: false, error: 'No image' });

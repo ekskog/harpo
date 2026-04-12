@@ -136,7 +136,7 @@ docker build -t ghcr.io/ekskog/harpo-ui:latest  ./harp-ui
 - `GET /collections/:id/songs/:songId/image` — song image from NFS
 - `GET /collections/:id/songs/:songId/lyrics` — lyrics text from NFS
 
-**NFS storage:** Cover images at `{NFS_ROOT}/{collection.source}/cover.{ext}`, song images at `{NFS_ROOT}/{collection.source}/{track_order}_image.{ext}`, lyrics at `{NFS_ROOT}/{collection.source}/{track_order}.txt`. Write endpoints (POST/PATCH for cover, image, lyrics) are disabled (501) until NFS write permissions are confirmed.
+**NFS storage:** Cover images at `{NFS_ROOT}/{collection.source}/cover.{ext}`, song images at `{NFS_ROOT}/{collection.source}/{track_order}.{ext}`, lyrics at `{NFS_ROOT}/{collection.source}/{track_order}.txt`. Write endpoints (POST/PATCH for cover, image, lyrics) are disabled (501) until NFS write permissions are confirmed.
 
 **Response envelope:**
 ```json
