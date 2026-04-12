@@ -8,66 +8,68 @@
     </div>
     <div v-else-if="collection" class="space-y-6">
       <!-- Collection Details -->
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="flex items-start justify-between mb-2">
-          <div class="flex items-center">
-            <img 
-              v-if="collection.id"
-              :src="`/api/v1/collections/${collection.id}/cover`" 
-              class="w-16 h-16 mr-4 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-              @error="handleImageError"
-              @click="openImageModal"
-              alt="Collection cover"
-            />
-            <div>
-              <h2 class="text-2xl font-bold text-slate-800 flex items-center">
-                {{ collection.name }}
-                <a v-if="collection.bandcamp_url" :href="collection.bandcamp_url" target="_blank" class="ml-2" title="Available on Bandcamp">
-                  <svg class="w-6 h-6 text-blue-300 hover:text-blue-500" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        <div class="flex items-start gap-3">
+          <img
+            v-if="collection.id"
+            :src="`/api/v1/collections/${collection.id}/cover`"
+            class="w-14 h-14 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+            @error="handleImageError"
+            @click="openImageModal"
+            alt="Collection cover"
+          />
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center flex-wrap gap-x-2 min-w-0">
+                <h2 class="text-xl font-bold text-slate-800 break-words">
+                  {{ collection.name }}
+                </h2>
+                <a v-if="collection.bandcamp_url" :href="collection.bandcamp_url" target="_blank" title="Available on Bandcamp">
+                  <svg class="w-5 h-5 text-blue-300 hover:text-blue-500" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                     <path d="M354.27,407.291H0.5l157.231-302.582H511.5L354.27,407.291z"/>
                   </svg>
                 </a>
-              </h2>
-              <p v-if="collection.description" class="text-slate-600 mt-1">
-                {{ collection.description }}
-              </p>
+              </div>
+              <div class="flex items-center gap-1 flex-shrink-0">
+                <button
+                  @click="showEditCollection = true"
+                  class="p-1.5 text-slate-600 hover:bg-slate-200 rounded-md transition-colors"
+                  title="Edit Collection"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+                <button
+                  @click="$refs.coverUpload.click()"
+                  class="p-1.5 text-slate-600 hover:bg-slate-200 rounded-md transition-colors"
+                  title="Upload Cover Image"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </button>
+                <input
+                  ref="coverUpload"
+                  type="file"
+                  accept="image/*"
+                  @change="handleCoverUpload"
+                  class="hidden"
+                />
+                <button
+                  @click="$emit('close')"
+                  class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-md transition-colors"
+                  title="Close collection"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="flex items-center space-x-2">
-            <button
-              @click="showEditCollection = true"
-              class="p-2 text-slate-600 hover:bg-slate-200 rounded-md transition-colors"
-              title="Edit Collection"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </button>
-            <button
-              @click="$refs.coverUpload.click()"
-              class="p-2 text-slate-600 hover:bg-slate-200 rounded-md transition-colors"
-              title="Upload Cover Image"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </button>
-            <input
-              ref="coverUpload"
-              type="file"
-              accept="image/*"
-              @change="handleCoverUpload"
-              class="hidden"
-            />
-            <button
-              @click="$emit('close')"
-              class="text-slate-400 hover:text-slate-600 p-1 -mt-1 hover:bg-slate-200 rounded transition-colors"
-              title="Close collection"
-            >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <p v-if="collection.description" class="text-slate-600 mt-1 text-sm">
+              {{ collection.description }}
+            </p>
           </div>
         </div>
       </div>
