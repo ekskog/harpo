@@ -16,7 +16,7 @@
             </label>
             <div class="flex items-center space-x-2">
               <button
-                v-if="selectedCollection"
+                v-if="selectedCollection && isAuthenticated"
                 @click="deleteSelectedCollection"
                 class="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                 :disabled="deletingCollection"
@@ -27,6 +27,7 @@
                 </svg>
               </button>
               <button
+                v-if="isAuthenticated"
                 @click="showCreateCollection = true"
                 class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
                 title="New Collection"

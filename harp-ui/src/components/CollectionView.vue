@@ -32,6 +32,7 @@
               </div>
               <div class="flex items-center gap-1 flex-shrink-0">
                 <button
+                  v-if="isAuthenticated"
                   @click="showEditCollection = true"
                   class="p-1.5 text-slate-600 hover:bg-slate-200 rounded-md transition-colors"
                   title="Edit Collection"
@@ -41,6 +42,7 @@
                   </svg>
                 </button>
                 <button
+                  v-if="isAuthenticated"
                   @click="$refs.coverUpload.click()"
                   class="p-1.5 text-slate-600 hover:bg-slate-200 rounded-md transition-colors"
                   title="Upload Cover Image"
@@ -84,6 +86,7 @@
             </span>
           </h3>
           <button
+            v-if="isAuthenticated"
             @click="showAddSong = true"
             class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
             title="Add Song"
@@ -127,6 +130,7 @@
             </div>
             <div class="flex items-center space-x-1">
               <button
+                v-if="isAuthenticated"
                 @click.stop="editSong(song)"
                 class="text-slate-600 hover:bg-slate-200 p-1 rounded transition-colors"
                 title="Edit song"
@@ -136,6 +140,7 @@
                 </svg>
               </button>
               <button
+                v-if="isAuthenticated"
                 @click.stop="deleteSong(song.id)"
                 class="text-red-600 hover:bg-red-50 p-1 ml-2 rounded transition-colors"
                 title="Delete song"
@@ -180,6 +185,7 @@
                 <div class="flex-1 min-w-0 order-1 md:order-2">
                   <div class="flex justify-end mb-4">
                     <button
+                      v-if="isAuthenticated"
                       @click="startEditLyrics"
                       class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
                       title="Edit Lyrics"
@@ -252,7 +258,7 @@
                 No lyrics available for this song.
               </p>
               
-              <div v-if="!showAddLyricsForm">
+              <div v-if="!showAddLyricsForm && isAuthenticated">
                 <button
                   @click="showAddLyricsForm = true"
                   class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
@@ -363,7 +369,7 @@
                 No artwork found for this song. You can upload one if you have permission.
               </p>
               <button
-                v-if="modalSong"
+                v-if="modalSong && isAuthenticated"
                 type="button"
                 class="px-4 py-2 bg-white text-slate-900 rounded font-medium hover:bg-slate-100 transition-colors"
                 @click.stop="triggerSongImageUpload(modalSong)"
