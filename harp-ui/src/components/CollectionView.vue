@@ -69,7 +69,7 @@
                 </button>
               </div>
             </div>
-            <p v-if="collection.description" class="text-slate-600 mt-1 text-sm">
+            <p v-if="collection.description" class="text-slate-600 mt-1 text-sm font-mono">
               {{ collection.description }}
             </p>
           </div>
@@ -158,20 +158,30 @@
       <Transition name="expand">
         <div v-if="showLyricsPanel" class="bg-white rounded-lg shadow-md overflow-hidden">
           <div class="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-            <div>
-              <h3 class="text-2xl font-bold text-slate-800">
-                {{ selectedSong?.title }}
-              </h3>
+            <h3 class="text-2xl font-bold text-slate-800">
+              {{ selectedSong?.title }}
+            </h3>
+            <div class="flex items-center gap-1">
+              <button
+                v-if="lyrics && !showEditLyricsForm"
+                @click="startEditLyrics"
+                class="p-2 text-slate-800 hover:bg-slate-200 rounded-md transition-colors"
+                title="Edit Lyrics"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button
+                @click="closeLyricsPanel"
+                class="text-slate-500 hover:text-slate-700 p-2 hover:bg-slate-200 rounded transition-colors"
+                title="Close"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <button
-              @click="closeLyricsPanel"
-              class="text-slate-500 hover:text-slate-700 p-2 hover:bg-slate-200 rounded transition-colors"
-              title="Close"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
           </div>
           <div class="p-6 flex flex-col gap-6">
             <div v-if="loadingLyrics" class="text-center py-12">
@@ -180,7 +190,7 @@
               </div>
             </div>
             <div v-else-if="lyrics && !showEditLyricsForm">
-              <div class="flex flex-col md:flex-row md:gap-6">
+              <div class="flex flex-col md:flex-row md:gap-6 md:items-start">
                 <!-- Lyrics column: first in DOM (top on mobile, right on md+) -->
                 <div class="flex-1 min-w-0 order-1 md:order-2">
                   <div class="flex justify-end mb-4">
@@ -195,10 +205,10 @@
                       </svg>
                     </button>
                   </div>
-                  <pre class="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">{{ lyrics }}</pre>
+                  <pre class="whitespace-pre-wrap font-mono text-slate-700 leading-relaxed">{{ lyrics }}</pre>
                 </div>
                 <!-- Image: bottom on mobile, fixed sidebar on md+ -->
-                <div v-if="selectedSong" class="w-full md:w-48 md:flex-shrink-0 mt-6 md:mt-0 order-2 md:order-1">
+                <div v-if="selectedSong" class="w-full md:w-64 md:flex-shrink-0 mt-6 md:mt-0 order-2 md:order-1">
                   <button
                     type="button"
                     class="block w-full aspect-square overflow-hidden border border-slate-200 bg-slate-50 hover:border-slate-400 transition-colors"
